@@ -2,12 +2,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc, getDoc, setDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDgoARkUtqmeg4JDpLLpr1mzS8f0VDMFE0",
-  authDomain: "blimmo.firebaseapp.com",
-  projectId: "blimmo",
-  storageBucket: "blimmo.firebasestorage.app",
-  messagingSenderId: "566587628949",
-  appId: "1:566587628949:web:78c8e8c154f903f159aa9c"
+   apiKey: "AIzaSyCSuh7v3c4Iz7UO5PzMxM1pTybUhVdsqx0",
+  authDomain: "cars-market-da3d7.firebaseapp.com",
+  projectId: "cars-market-da3d7",
+  storageBucket: "cars-market-da3d7.firebasestorage.app",
+  messagingSenderId: "863229375569",
+  appId: "1:863229375569:web:29073b3a194ad5a917f470"
 };
 
 const app = initializeApp(firebaseConfig);
