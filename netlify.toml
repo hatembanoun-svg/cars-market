@@ -1,0 +1,19 @@
+# Security headers — C4 of .claude/reviews/local-review-2026-10-24.md (finding H4).
+# The CSP ships in Report-Only mode on purpose: violations are reported in the
+# browser console without blocking anything, so the Pixel/Leaflet/Firebase
+# domains below can be validated against real traffic before switching the
+# header name to the enforcing "Content-Security-Policy".
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+
+    # Report-only CSP: every directive below is derived from the origins the
+    # site actually loads today (audited 2026-10-25).
+    Content-Security-Policy-Report-Only = "default-src 'self'; script-src 'self' 'unsafe-inline' https://connect.facebook.net https://www.gstatic.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://tile.openstreetmap.org https://www.facebook.com; connect-src 'self' https://firestore.googleapis.com https://www.facebook.com https://connect.facebook.net; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Strict-Transport-Security = "max-age=86400"
+    Permissions-Policy = "geolocation=(self), camera=(), microphone=()"

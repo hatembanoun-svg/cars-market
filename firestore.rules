@@ -1,0 +1,90 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Image field: missing/null is fine, otherwise a string under ~400 KB.
+    function imgOk(img) {
+      return img == null || (img is string && img.size() < 850000);
+    }
+
+    // Stats start at zero (or are absent) on new ads.
+    function zeroOrMissing(v) {
+      return v == null || v == 0;
+    }
+
+    // One review/comment entry: known keys only, sane types and lengths.
+    function validEntry(e, textMax, needRating) {
+      return e is map
+        && e.keys().hasOnly(['name', 'rating', 'text', 'date'])
+        && e.get('text', '') is string && e.get('text', '').size() <= textMax
+        && e.get('name', '') is string && e.get('name', '').size() <= 60
+        && e.get('date', '') is string && e.get('date', '').size() <= 30
+        && (!needRating || 'rating' in e)
+        && (!('rating' in e) || (e.rating is number && e.rating >= 1 && e.rating <= 5));
+    }
+
+    match /clients/{adId} {
+      // Ads are public.
+      allow read: if true;
+
+      // Anyone can post an ad, but stats must start at zero and the image must be small.
+      allow create: if request.resource.data.keys().size() <= 60
+        && imgOk(request.resource.data.get('imgBase64', null))
+        && zeroOrMissing(request.resource.data.get('views', null))
+        && zeroOrMissing(request.resource.data.get('ratingCount', null))
+        && zeroOrMissing(request.resource.data.get('avgRating', null));
+
+      // Updates may only touch the 3 stats fields, by small bounded steps.
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views', 'avgRating', 'ratingCount'])
+        && request.resource.data.get('views', 0) >= resource.data.get('views', 0)
+        && request.resource.data.get('views', 0) <= resource.data.get('views', 0) + 1
+        && request.resource.data.get('ratingCount', 0) >= resource.data.get('ratingCount', 0)
+        && request.resource.data.get('ratingCount', 0) <= resource.data.get('ratingCount', 0) + 1
+        && request.resource.data.get('avgRating', 0) >= 0
+        && request.resource.data.get('avgRating', 0) <= 5;
+
+      // No deleting from the browser (delete spam from the Firebase Console).
+      allow delete: if false;
+    }
+
+    match /ratings/{adId} {
+      allow read: if true;
+
+      // First review of an ad.
+      allow create: if request.resource.data.keys().hasOnly(['reviews'])
+        && request.resource.data.reviews is list
+        && request.resource.data.reviews.size() == 1
+        && validEntry(request.resource.data.reviews[0], 500, true);
+
+      // Append-only: exactly one new review, old ones unchanged, max 300.
+      allow update: if request.resource.data.keys().hasOnly(['reviews'])
+        && request.resource.data.reviews is list
+        && request.resource.data.reviews.size() == resource.data.reviews.size() + 1
+        && request.resource.data.reviews.size() <= 300
+        && request.resource.data.reviews[0:resource.data.reviews.size()] == resource.data.reviews
+        && validEntry(request.resource.data.reviews[request.resource.data.reviews.size() - 1], 500, true);
+
+      allow delete: if false;
+    }
+
+    match /comments/{adId} {
+      allow read: if true;
+
+      allow create: if request.resource.data.keys().hasOnly(['items'])
+        && request.resource.data.items is list
+        && request.resource.data.items.size() == 1
+        && validEntry(request.resource.data.items[0], 600, false);
+
+      allow update: if request.resource.data.keys().hasOnly(['items'])
+        && request.resource.data.items is list
+        && request.resource.data.items.size() == resource.data.items.size() + 1
+        && request.resource.data.items.size() <= 300
+        && request.resource.data.items[0:resource.data.items.size()] == resource.data.items
+        && validEntry(request.resource.data.items[request.resource.data.items.size() - 1], 600, false);
+
+      allow delete: if false;
+    }
+
+    // Everything else is denied by default.
+  }
+}

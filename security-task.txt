@@ -1,0 +1,16 @@
+Context: read .claude/reviews/local-review-2026-10-24.md. You are on the git branch security-fixes. Fix ONLY the following items, in this order, one separate commit per item with a clear commit message.
+
+1) C1 - Stored XSS in comments (app.js, around lines 759-767): build the comment DOM with createElement and textContent instead of innerHTML.
+
+2) C2 - Stored XSS in card inline handlers (app.js, around lines 403, 423, 426): never put user data inside onclick strings. Use data- attributes and addEventListener. Restrict phone values to digits only.
+
+3) C3 - netlify/functions/generate-desc.js: restrict Access-Control-Allow-Origin to https://darna-immo.netlify.app, do not return err.message to the caller, add a simple rate limit. Never write any API key in the code; read it from an environment variable.
+
+4) Create a new firestore.rules file (deny client writes to ratings and aggregates) and a new netlify.toml with security headers. Put the CSP in Content-Security-Policy-Report-Only mode only. Do not deploy either file.
+
+Constraints:
+- Do not edit any other file and do not reformat code.
+- Do not run git push and do not deploy anything.
+- Only read files, and run git add and git commit. Always use git add with explicit file names, never git add . or git add -A (security-task.txt must not be committed).
+- Show me each change before saving and wait for my approval.
+- At the end, list everything that needs manual action from me (rotating the Gemini key, Firebase rules testing, and similar).
