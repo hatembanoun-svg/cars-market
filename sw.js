@@ -1,6 +1,6 @@
 // sw.js – Cars Market DZ Service Worker
 // غيّر رقم النسخة عند أي تحديث كبير حتى يُحذف الكاش القديم.
-const CACHE_NAME = 'cars-market-v3';
+const CACHE_NAME = 'cars-market-v4';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -34,9 +34,12 @@ self.addEventListener('fetch', event => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-  if (NETWORK_ONLY.some(p => req.url.includes(p))) return; // بيانات حية وبلاط الخريطة: لا كاش
+  // الـ Service Worker يتعامل مع ملفات موقعنا فقط. الطلبات الخارجية (Firebase وLeaflet والخطوط والخريطة)
+  // يتركها للمتصفح مباشرة، فلا تخضع لـ connect-src في CSP ويبقى كاش المتصفح العادي يعمل.
+  if (url.origin !== self.location.origin) return;
+  if (NETWORK_ONLY.some(p => req.url.includes(p))) return;
 
-  const sameOrigin = url.origin === self.location.origin;
+  const sameOrigin = true;
   const isCode = sameOrigin && (req.mode === 'navigate' || ['document', 'script', 'style', 'manifest'].includes(req.destination));
 
   if (isCode) {

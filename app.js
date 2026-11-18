@@ -32,7 +32,7 @@ if (APPCHECK_SITE_KEY) {
 }
 let db;
 try {
-  db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+  db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }), experimentalAutoDetectLongPolling: true });
 } catch (e) {
   db = getFirestore(app);
 }
