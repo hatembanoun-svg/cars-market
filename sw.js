@@ -1,5 +1,5 @@
-// sw.js – Darna Immo Service Worker
-const CACHE_NAME = 'darna-immo-v16';
+// sw.js – Cars Market DZ Service Worker
+const CACHE_NAME = 'cars-market-v1';
 
 // الملفات التي يتم تخزينها للعمل بدون انترنت
 const STATIC_ASSETS = [
@@ -7,12 +7,14 @@ const STATIC_ASSETS = [
   './index.html',
   './listings.html',
   './styles.css',
+  './cars.css',
   './app.js',
   './map.js',
-  './communes.js',
+  './data.js',
   './fx.js',
   './manifest.json',
   './assets/logo.png',
+  './assets/icon-192.png',
   'https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap'
 ];
 

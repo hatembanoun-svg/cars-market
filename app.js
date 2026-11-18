@@ -1,8 +1,17 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc, getDoc, setDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+// ══════════════════════════════════════════════════════
+// إعدادات الموقع — عدّل هذه القيم فقط
+// ══════════════════════════════════════════════════════
+const SITE_NAME = 'Cars Market DZ';
+// رقم واتساب صاحب الموقع بالصيغة الدولية بدون + (مثال: 2135XXXXXXXX). يُستعمل لطلبات الإعلان المميز.
+const OWNER_WHATSAPP = '213000000000';
+const FEAT_DAYS = 7;       // مدة الإعلان المميز
+const FEAT_PRICE = 500;    // سعره بالدينار
 
 const firebaseConfig = {
-   apiKey: "AIzaSyCSuh7v3c4Iz7UO5PzMxM1pTybUhVdsqx0",
+  apiKey: "AIzaSyCSuh7v3c4Iz7UO5PzMxM1pTybUhVdsqx0",
   authDomain: "cars-market-da3d7.firebaseapp.com",
   projectId: "cars-market-da3d7",
   storageBucket: "cars-market-da3d7.firebasestorage.app",
@@ -11,342 +20,137 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-// كاش دائم في المتصفح: الزيارة الثانية تعرض الإعلانات فوراً من الذاكرة المحلية ثم تتحدث من الخادم
 let db;
 try {
   db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
 } catch (e) {
   db = getFirestore(app);
 }
-const adsCol = collection(db, "clients");
-
-// Language state – French is default
-let currentLang = 'fr';
-
-// Data mappings – Arabic (default)
-const PT = { aadl:"AADL", social:"Social", lpp:"LPP", lsp:"LSP", villa:"فيلا", maison:"منزل", appart:"شقة", residence:"ريزيدنس", local:"محل" };
-const OP = { kira:"كراء", bay3:"بيع", achat:"شراء", tbadol:"تبادل" };
-const ROOMS = { f1:"F1", f2:"F2", f3:"F3", f4:"F4", f5:"F5", f6:"F6+" };
-const COND = { neuf:"جديد", utilise:"مستعمل" };
-const STATUS = { dispo:"متوفر", reserved:"محجوز", sold:"تم البيع", rented:"تم الكراء" };
-
-// Data mappings – French
-const PT_FR = { aadl:"AADL", social:"Social", lpp:"LPP", lsp:"LSP", villa:"Villa", maison:"Maison", appart:"Appartement", residence:"Résidence", local:"Local commercial" };
-const OP_FR = { kira:"Location", bay3:"Vente", achat:"Achat", tbadol:"Échange" };
-const COND_FR = { neuf:"Neuf", utilise:"Occasion" };
-const STATUS_FR = { dispo:"Disponible", reserved:"Réservé", sold:"Vendu", rented:"Loué" };
-
-// Helpers to get label in current language
-function lPT(k)  { return (currentLang==='fr' ? PT_FR[k]  : PT[k])  || k; }
-function lOP(k)  { return (currentLang==='fr' ? OP_FR[k]  : OP[k])  || k; }
-function lCOND(k){ return (currentLang==='fr' ? COND_FR[k]: COND[k]) || k; }
-function lSTATUS(k){ return (currentLang==='fr' ? STATUS_FR[k]: STATUS[k]) || k; }
-const STATUS_COLORS = { dispo:"#15803D", reserved:"#B45309", sold:"#B91C1C", rented:"#9E6D3E" };
-const TYPE_COLORS = { aadl:"#1C5FAD", social:"#6B21A8", lpp:"#C2410C", lsp:"#059669", villa:"#8B5A2B", maison:"#2F6B47", appart:"#1C5FAD", residence:"#6A1B9A", local:"#C2410C" };
-const OP_COLORS = { kira:"#C9A84C", bay3:"#CE1126", achat:"#0E6B56", tbadol:"#374151" };
+const adsCol = collection(db, "clients"); // اسم المجموعة كما في القواعد المنشورة
 
 // ══════════════════════════════════════════════════════
-// SMART SEARCH ENGINE v2 – بحث ذكي عام (عربي ⇄ فرنسي/لاتيني)
+// اللغة والنصوص
 // ══════════════════════════════════════════════════════
-//
-// المشكلة مع النسخة السابقة: قاموس مرادفات يدوي محدود — أي اسم مكان غير مُدرَج
-// (مثل "عميروش" أو "سيدي بنور") لا يُطابق إطلاقاً.
-//
-// الحل الجديد: محرك تحويل صوتي عام (Transliteration) يُحوّل أي كلمة عربية
-// إلى "بصمة صوتية لاتينية" وأي كلمة فرنسية/لاتينية إلى نفس البصمة، ثم يقارن
-// البصمتين. هذا يعمل مع أي اسم — مُدرَج بالقاموس أو لا — لأنه يعتمد على
-// الأصوات الفعلية للحروف، وليس على حفظ كل اسم يدوياً.
-// القاموس اليدوي يبقى موجوداً كطبقة دقة إضافية فوق هذا المحرك العام.
+let currentLang = 'ar';
+try { const s = localStorage.getItem('cm_lang'); if (s === 'fr' || s === 'ar') currentLang = s; } catch (e) {}
+const $ = id => document.getElementById(id);
+const fr = () => currentLang === 'fr';
+const t = (ar, f) => (currentLang === 'fr' ? f : ar);
 
-// ── خريطة تحويل: حرف عربي → الصوت اللاتيني المقابل (كما يُكتب بالفرنسية في الجزائر) ──
-const ARABIC_TO_LATIN_SOUND = {
-  'ا':'a', 'أ':'a', 'إ':'a', 'آ':'a', 'ء':'',
-  'ب':'b', 'ت':'t', 'ث':'t',
-  'ج':'j', 'ح':'h', 'خ':'q',   // خ → q (يطابق kh → q في اللاتيني)
-  'د':'d', 'ذ':'d', 'ر':'r', 'ز':'z',
-  'س':'s', 'ش':'x',             // ش → x (يطابق ch → x في اللاتيني)
-  'ص':'s', 'ض':'d',
-  'ط':'t', 'ظ':'d', 'ع':'', 'غ':'g',
-  'ف':'f', 'ق':'k', 'ك':'k', 'ل':'l',
-  'م':'m', 'ن':'n', 'ه':'h', 'ة':'a',
-  'و':'u', 'ي':'i', 'ى':'a', 'ئ':'i', 'ؤ':'u',  // و → u يطابق ou → u
-  ' ':' ',
+const WILAYAS = window.DZ_WILAYAS || [];
+const BRANDS = window.CM_BRANDS || [];
+const FUEL = window.CM_FUEL || {};
+const GEAR = window.CM_GEAR || {};
+const SELLER = window.CM_SELLER || {};
+const lab = (table, key) => { const o = table[key]; return o ? (fr() ? o.fr : o.ar) : (key || ''); };
+const wilayaByCode = code => WILAYAS.find(w => w.code === Number(code));
+const wName = code => { const w = wilayaByCode(code); return w ? (fr() ? w.fr : w.ar) : ''; };
+const wLabel = w => `${String(w.code).padStart(2, '0')} - ${fr() ? w.fr : w.ar}`;
+
+const escHtml = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+const safeImgSrc = v => {
+  const s = String(v == null ? '' : v);
+  return /^data:image\/(?:png|jpe?g|gif|webp|avif);base64,[A-Za-z0-9+\/=\s]+$/i.test(s) ? s : '';
+};
+const adImages = ad => {
+  const arr = Array.isArray(ad.imgs) ? ad.imgs.slice() : [];
+  if (!arr.length && ad.imgBase64) arr.push(ad.imgBase64);
+  return arr.map(safeImgSrc).filter(Boolean);
 };
 
-// تحويل كلمة عربية إلى بصمة صوتية لاتينية مبسّطة (للمقارنة الصوتية)
-function arabicToPhonetic(str) {
-  let out = '';
-  for (const ch of str) {
-    out += ARABIC_TO_LATIN_SOUND[ch] !== undefined ? ARABIC_TO_LATIN_SOUND[ch] : ch;
-  }
-  return out;
+// ══════════════════════════════════════════════════════
+// الإعلان المميز (يُفعَّل يدوياً من لوحة Firebase: feat=true و featUntil="YYYY-MM-DD")
+// ══════════════════════════════════════════════════════
+function featEnd(ad) {
+  const v = ad.featUntil;
+  if (!v) return 0;
+  if (typeof v.toMillis === 'function') return v.toMillis();
+  if (typeof v === 'number') return v;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v));
+  return m ? new Date(+m[1], +m[2] - 1, +m[3], 23, 59, 59).getTime() : 0;
 }
+const isFeatured = ad => ad.feat === true && featEnd(ad) > Date.now();
+window.CM_isFeatured = isFeatured;
 
-// تبسيط كلمة لاتينية/فرنسية إلى نفس "مستوى" البصمة الصوتية
-// (إزالة أحرف العلة المزدوجة، توحيد أصوات متشابهة في الفرنسية الجزائرية)
-function latinToPhonetic(str) {
-  return str
-    .toLowerCase()
-    .replace(/ou/g, 'u')       // ou الفرنسية → u (Ouled → uld، تطابق "أولاد" → uld)
-    .replace(/ch/g, 'x')       // ch → x (حرف خاص نتجنب به التعارض مع 'c' و'h' منفردين)
-    .replace(/kh/g, 'q')       // kh → q
-    .replace(/gh/g, 'g')
-    .replace(/qu/g, 'k')
-    .replace(/c(?!h)/g, 'k')
-    .replace(/ph/g, 'f')
-    .replace(/[éèêë]/g, 'e')
-    .replace(/[àâ]/g, 'a')
-    .replace(/[îï]/g, 'i')
-    .replace(/[ô]/g, 'o')
-    .replace(/[ûù]/g, 'u')
-    .replace(/y/g, 'i')
-    .replace(/[aeiou]{2,}/g, m => m[0])
-    .replace(/(.)\1+/g, '$1')
-    .replace(/[^a-z ]/g, '');
+// ══════════════════════════════════════════════════════
+// تنسيق الأسعار والأرقام
+// ══════════════════════════════════════════════════════
+const trim1 = n => String(Math.round(n * 10) / 10).replace(/\.0$/, '');
+const fmt = n => Number(n || 0).toLocaleString('fr-DZ');
+function centimes(price) {
+  const c = Number(price || 0) * 100;
+  if (!c) return '';
+  return c >= 1e9 ? trim1(c / 1e9) + t(' مليار سنتيم', ' Md de centimes') : trim1(c / 1e6) + t(' مليون سنتيم', ' M de centimes');
 }
+const carTitle = ad => ad.title || [ad.brand, ad.model, ad.year].filter(Boolean).join(' ') || t('سيارة', 'Voiture');
 
-// تبسيط البصمة العربية أيضاً (إزالة التكرار وأحرف العلة الزائدة) لمطابقة أعمّ
-function simplifyPhonetic(str) {
-  return str
-    .replace(/[aeiou]{2,}/g, m => m[0])
-    .replace(/(.)\1+/g, '$1')
-    .replace(/[^a-z]/g, c => c === ' ' ? ' ' : '');
-}
-
-// ── البصمة الصوتية الموحّدة لأي نص (عربي أو فرنسي) ──
-function phoneticFingerprint(str) {
-  if (!str) return '';
-  const hasArabic = /[\u0600-\u06FF]/.test(str);
-  const raw = hasArabic ? arabicToPhonetic(str) : latinToPhonetic(str);
-  return simplifyPhonetic(raw.toLowerCase()).replace(/\s+/g, ' ').trim();
-}
-
-// ── قاموس دقيق لأهم البلديات والولايات (طبقة دقة إضافية فوق المحرك الصوتي العام) ──
-const COMMUNE_SYNONYMS = [
-  ['سيدي عبد الله', 'Sidi Abdellah'],
-  ['الرغاية', 'Reghaia'],
-  ['أولاد فايت', 'Ouled Fayet'],
-  ['الدار البيضاء', 'Dar El Beida'],
-  ['حسين داي', 'Hussein Dey'],
-  ['باب الزوار', 'Bab Ezzouar'],
-  ['برج البحري', 'Bordj El Bahri'],
-  ['القبة', 'El Kouba', 'Kouba'],
-  ['بئر مراد رايس', 'Bir Mourad Rais'],
-  ['الحراش', 'El Harrach'],
-  ['بوزريعة', 'Bouzareah'],
-  ['شراقة', 'Cheraga'],
-  ['الأبيار', 'El Biar'],
-  ['بن عكنون', 'Ben Aknoun'],
-  ['زرالدة', 'Zeralda'],
-  ['الجزائر الوسطى', 'Alger Centre'],
-  ['باب الوادي', 'Bab El Oued'],
-  ['المرادية', 'El Mouradia'],
-  ['درارية', 'Draria'],
-  ['الرويبة', 'Rouiba'],
-  ['وادي السمار', 'Oued Smar'],
-  ['دالي إبراهيم', 'Dely Ibrahim'],
-  ['حيدرة', 'Hydra'],
-  ['عين بنيان', 'Ain Benian'],
-  ['سطاوالي', 'Staoueli'],
-  ['برج الكيفان', 'Bordj El Kiffan'],
-  ['المحمدية', 'El Mohammadia'],
-  ['عين طاية', 'Ain Taya'],
-  ['الأربعاء', 'Larbaa'],
-  ['الكاليتوس', 'Les Eucalyptus'],
-  ['بئر خادم', 'Birkhadem'],
-  ['الشراقة', 'Cheraga'],
-  ['سيدي بنور', 'Sidi Bennour'],
-  ['عميروش', 'Amirouche'],
-  ['عين الدفلى', 'Ain Defla'],
-  ['البليدة', 'Blida'],
-  ['بومرداس', 'Boumerdes'],
-  ['تيبازة', 'Tipaza'],
-  ['الشلف', 'Chlef'],
-  ['وهران', 'Oran'],
-  ['قسنطينة', 'Constantine'],
-  ['عنابة', 'Annaba'],
-  ['سطيف', 'Setif'],
-  ['باتنة', 'Batna'],
-  ['تيزي وزو', 'Tizi Ouzou'],
-  ['بجاية', 'Bejaia'],
-  ['مستغانم', 'Mostaganem'],
-];
-
-// ── قاموس مرادفات عامة لمصطلحات عقارية شائعة ──
-const GENERAL_SYNONYMS = [
-  ['شقة', 'appartement', 'appart'],
-  ['فيلا', 'villa'],
-  ['منزل', 'maison', 'بيت'],
-  ['محل', 'local', 'magasin'],
-  ['ريزيدنس', 'residence'],
-  ['كراء', 'location', 'louer'],
-  ['بيع', 'vente', 'vendre'],
-  ['شراء', 'achat', 'acheter'],
-  ['تبادل', 'echange'],
-  ['جديد', 'neuf', 'nouveau'],
-  ['مستعمل', 'occasion'],
-  ['متوفر', 'disponible', 'dispo'],
-];
-
-const ALL_SYNONYM_GROUPS = [...COMMUNE_SYNONYMS, ...GENERAL_SYNONYMS];
-
-// ── تطبيع نصي بسيط (للمقارنة الحرفية المباشرة قبل اللجوء للصوتيات) ──
-function normalizeText(str) {
-  if (!str) return '';
-  return str
-    .toString()
-    .toLowerCase()
+// ══════════════════════════════════════════════════════
+// البحث: عربي/لاتيني، مع مرادفات الماركات الشائعة
+// ══════════════════════════════════════════════════════
+const BRAND_ALIASES = {
+  'رونو': 'renault', 'رينو': 'renault', 'بيجو': 'peugeot', 'داسيا': 'dacia', 'سيتروين': 'citroen', 'فيات': 'fiat',
+  'فولكسفاغن': 'volkswagen', 'فولكس': 'volkswagen', 'غولف': 'golf', 'هيونداي': 'hyundai', 'هيوندي': 'hyundai', 'كيا': 'kia',
+  'تويوتا': 'toyota', 'سوزوكي': 'suzuki', 'شيفروليه': 'chevrolet', 'شيفرولي': 'chevrolet', 'سيات': 'seat', 'سكودا': 'skoda',
+  'مرسيدس': 'mercedes', 'بيام': 'bmw', 'اودي': 'audi', 'نيسان': 'nissan', 'فورد': 'ford', 'اوبل': 'opel', 'شيري': 'chery',
+  'جيلي': 'geely', 'ميتسوبيشي': 'mitsubishi', 'مازدا': 'mazda', 'هوندا': 'honda', 'جيب': 'jeep', 'فولفو': 'volvo',
+  'ميني': 'mini', 'لادا': 'lada', 'كليو': 'clio', 'سيمبول': 'symbol', 'ستيبواي': 'stepway', 'سانديرو': 'sandero'
+};
+function norm(s) {
+  return String(s == null ? '' : s).toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[أإآا]/g, 'ا')
-    .replace(/[ىي]/g, 'ي')
-    .replace(/ة/g, 'ه')
-    .replace(/ؤ/g, 'و')
-    .replace(/ئ/g, 'ي')
-    .replace(/[ًٌٍَُِّْ]/g, '')
-    .replace(/[-_,،.]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+    .replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه')
+    .replace(/[^a-z0-9\u0600-\u06FF\s]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function haystack(ad) {
+  const w = wilayaByCode(ad.wilaya);
+  return norm([ad.brand, ad.model, ad.title, ad.year, ad.desc, w && w.ar, w && w.fr, lab(FUEL, ad.fuel), FUEL[ad.fuel] && FUEL[ad.fuel].fr,
+    FUEL[ad.fuel] && FUEL[ad.fuel].ar, GEAR[ad.gearbox] && GEAR[ad.gearbox].ar, GEAR[ad.gearbox] && GEAR[ad.gearbox].fr].join(' '));
+}
+function adMatchesSearch(ad, raw) {
+  const tokens = norm(raw).split(' ').filter(Boolean);
+  if (!tokens.length) return true;
+  const hay = ad.__hay || (ad.__hay = haystack(ad));
+  return tokens.every(tok => hay.includes(BRAND_ALIASES[tok] || tok));
 }
 
-// ── خريطة مرادفات مبنية من القاموس اليدوي (للمطابقة الدقيقة السريعة) ──
-const SYNONYM_EXPANSION_MAP = (() => {
-  const map = {};
-  ALL_SYNONYM_GROUPS.forEach(group => {
-    const normalizedGroup = group.map(normalizeText);
-    normalizedGroup.forEach(word => {
-      if (!map[word]) map[word] = new Set();
-      normalizedGroup.forEach(w => map[word].add(w));
-    });
-  });
-  return map;
-})();
-
-function expandSearchTerm(term) {
-  const norm = normalizeText(term);
-  if (SYNONYM_EXPANSION_MAP[norm]) return [...SYNONYM_EXPANSION_MAP[norm]];
-  for (const key in SYNONYM_EXPANSION_MAP) {
-    if (key.includes(norm) || norm.includes(key)) return [...SYNONYM_EXPANSION_MAP[key]];
-  }
-  return [norm];
-}
-
-// ── مسافة Levenshtein لالتقاط الأخطاء الإملائية ──
-function levenshteinDistance(a, b) {
-  if (a === b) return 0;
-  if (!a.length) return b.length;
-  if (!b.length) return a.length;
-  const matrix = Array.from({ length: a.length + 1 }, (_, i) => [i]);
-  for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
-  for (let i = 1; i <= a.length; i++) {
-    for (let j = 1; j <= b.length; j++) {
-      matrix[i][j] = a[i-1] === b[j-1]
-        ? matrix[i-1][j-1]
-        : 1 + Math.min(matrix[i-1][j-1], matrix[i-1][j], matrix[i][j-1]);
-    }
-  }
-  return matrix[a.length][b.length];
-}
-
-// ── مطابقة كلمة بحث ضد نص هدف، بـ3 طبقات متدرجة: حرفي → مرادفات → صوتي ──
-function termMatchesHaystack(term, haystackNorm, haystackPhonetic) {
-  const normTerm = normalizeText(term);
-  if (!normTerm) return false;
-
-  // الطبقة 1: مطابقة حرفية مباشرة (الأسرع)
-  if (haystackNorm.includes(normTerm)) return true;
-
-  // الطبقة 2: مرادفات من القاموس اليدوي (دقة عالية للأسماء الشائعة)
-  const expanded = expandSearchTerm(term);
-  for (const exp of expanded) {
-    if (exp && haystackNorm.includes(exp)) return true;
-  }
-
-  // الطبقة 3: مطابقة صوتية عامة — تعمل مع أي اسم غير مُدرَج بالقاموس
-  // شرط: البصمة الصوتية ≥ 4 أحرف لتجنب التطابقات الوهمية مع الكلمات القصيرة
-  if (normTerm.length >= 4) {
-    const termPhonetic = phoneticFingerprint(term);
-    if (termPhonetic.length >= 4 && haystackPhonetic.includes(termPhonetic)) return true;
-
-    // تسامح إملائي إضافي على المستوى الصوتي
-    if (termPhonetic.length >= 4) {
-      const phoneticWords = haystackPhonetic.split(' ').filter(w => w.length >= 3);
-      for (const w of phoneticWords) {
-        const threshold = termPhonetic.length <= 5 ? 1 : 2;
-        if (levenshteinDistance(w, termPhonetic) <= threshold) return true;
-      }
-    }
-  }
-
-  return false;
-}
-
-// ── الدالة الرئيسية: هل إعلان معيّن يطابق نص البحث؟ ──
-function adMatchesSearch(ad, searchRaw) {
-  const search = (searchRaw || '').trim();
-  if (!search) return true;
-
-  const words = search.split(/\s+/).filter(Boolean);
-
-  const haystackFields = [
-    ad.title || '', ad.commune || '', ad.desc || '',
-    lPT(ad.type) || '', PT[ad.type] || '', PT_FR[ad.type] || '',
-    lOP(ad.op) || '', OP[ad.op] || '', OP_FR[ad.op] || '',
-  ];
-  const haystackRaw = haystackFields.join(' ');
-  const haystackNorm = normalizeText(haystackRaw);
-  const haystackPhonetic = phoneticFingerprint(haystackRaw);
-
-  return words.every(word => termMatchesHaystack(word, haystackNorm, haystackPhonetic));
-}
-
-// ── وضع الصفحة: home (الرئيسية - معاينة) أو listings (كل العقارات) ──
+// ══════════════════════════════════════════════════════
+// الحالة والفلاتر (حالة واحدة مركزية لكل عناصر data-f)
+// ══════════════════════════════════════════════════════
 const PAGE_MODE = document.body.dataset.mode === 'listings' ? 'listings' : 'home';
+let DATA = [];
+let displayList = [];
 let dataLoaded = false;
 let dataLoadError = false;
-
-// State
-let DATA = [];
-let fTypes = new Set(['aadl','social','lpp','lsp','villa','maison','appart','residence','local']);
-// الصفحة الرئيسية أصبحت متخصصة في LPP افتراضياً — listings.html تبقى Marketplace عام (فتحها بدون فلاتر URL تُبقي كل الأنواع)
-if (PAGE_MODE === 'home') fTypes = new Set(['lpp']);
-let homeShowAll = false; // يصبح true عند اختيار "عرض كل أنواع العقارات" من شاشة الترحيب
-let fOp = 'all';
-let fRooms = 'all';
-let fCondition = 'all';
-let fStatus = 'all';
-let fSearch = '';
-let fCommune = '';
-let priceMin = 0;
-let priceMax = Infinity;
-let displayList = [];
-const favs = new Set(); // مجموعة IDs المفضلة
-
-// Helper functions
-function getTypeColor(type) { return TYPE_COLORS[type] || '#0D3B2E'; }
-function getOpColor(op) { return OP_COLORS[op] || '#0D3B2E'; }
-function getStatusColor(status) { return STATUS_COLORS[status] || '#555'; }
+const F = { q: '', brand: '', wilaya: '', fuel: 'all', gear: 'all', seller: 'all', ymin: 0, pmin: 0, pmax: Infinity, kmax: Infinity };
 
 function applyFilters() {
   displayList = DATA.filter(ad => {
-    if (!fTypes.has(ad.type)) return false;
-    if (fOp !== 'all' && ad.op !== fOp) return false;
-    if (fRooms !== 'all' && ad.rooms !== fRooms) return false;
-    if (fCondition !== 'all' && ad.condition !== fCondition) return false;
-    if (fStatus !== 'all' && ad.status !== fStatus) return false;
-    if (fCommune && !adMatchesSearch(ad, fCommune)) return false;
+    if (F.brand && ad.brand !== F.brand) return false;
+    if (F.wilaya && Number(ad.wilaya) !== Number(F.wilaya)) return false;
+    if (F.fuel !== 'all' && ad.fuel !== F.fuel) return false;
+    if (F.gear !== 'all' && ad.gearbox !== F.gear) return false;
+    if (F.seller !== 'all' && ad.seller !== F.seller) return false;
+    if (F.ymin && Number(ad.year) < F.ymin) return false;
     const price = Number(ad.price) || 0;
-    if (price < priceMin || price > priceMax) return false;
-    if (fSearch && !adMatchesSearch(ad, fSearch)) return false;
+    if (price < F.pmin || price > F.pmax) return false;
+    if (F.kmax !== Infinity && Number(ad.km) > F.kmax) return false;
+    if (F.q && !adMatchesSearch(ad, F.q)) return false;
     return true;
   });
   sortAndRender();
 }
 
 function sortAndRender() {
-  const sortVal = document.getElementById('srt')?.value || 'new';
-  if (sortVal === 'pa') displayList.sort((a, b) => (a.price || 0) - (b.price || 0));
-  else if (sortVal === 'pd') displayList.sort((a, b) => (b.price || 0) - (a.price || 0));
-  else displayList.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  const s = $('srt') ? $('srt').value : 'new';
+  const by = {
+    new: (a, b) => (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0),
+    pa: (a, b) => (a.price || 0) - (b.price || 0),
+    pd: (a, b) => (b.price || 0) - (a.price || 0),
+    ya: (a, b) => (b.year || 0) - (a.year || 0),
+    km: (a, b) => (a.km || 0) - (b.km || 0)
+  }[s] || ((a, b) => 0);
+  displayList.sort((a, b) => (isFeatured(b) - isFeatured(a)) || by(a, b)); // المميز دائماً في الأعلى
   if (PAGE_MODE === 'home') {
     renderHomePreview();
     if (window.DarnaMap && dataLoaded) window.DarnaMap.render(displayList);
@@ -354,1556 +158,542 @@ function sortAndRender() {
     renderAds(displayList);
   }
 }
+window.sl = () => sortAndRender();
 
-function renderAds(list) {
-  const grid = document.getElementById('grid');
-  const rnSpan = document.getElementById('rn');
-  if (!grid) return;
-  const T = LANG[currentLang];
-  if (rnSpan) rnSpan.innerText = list.length;
-  const liveCountEl = document.getElementById('liveAdCount');
-  if (liveCountEl) liveCountEl.innerText = DATA.length;
-
-  if (list.length === 0) {
-    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div style="font-size:48px;margin-bottom:12px">🔍</div><h3>${T.noAds}</h3><p>${T.noAdsSub}</p></div>`;
-    return;
-  }
-
-  grid.innerHTML = list.map(ad => buildCardHTML(ad)).join('');
-  // تحديث عداد الكاروسيل بعد رسم البطاقات
-  requestAnimationFrame(() => { if (typeof updateCarouselCount === "function") updateCarouselCount(); });
-}
-
-// ── قالب بطاقة عقار مشترك (تستخدمه الشبكة الكاملة ومعاينة الرئيسية) ──
-const CARD_TYPE_BG = {
-  aadl:'linear-gradient(135deg,#DBEAFE,#BFDBFE)',
-  social:'linear-gradient(135deg,#EDE9FE,#DDD6FE)',
-  lpp:'linear-gradient(135deg,#FEE2E2,#FECACA)',
-  lsp:'linear-gradient(135deg,#D1FAE5,#A7F3D0)',
-  villa:'linear-gradient(135deg,#FEF3C7,#FDE68A)',
-  maison:'linear-gradient(135deg,#DCFCE7,#BBF7D0)',
-  appart:'linear-gradient(135deg,#E0F2FE,#BAE6FD)',
-  residence:'linear-gradient(135deg,#F3E8FF,#E9D5FF)',
-  local:'linear-gradient(135deg,#FFE4E6,#FECDD3)',
-};
-const CARD_TYPE_ICON = {
-  aadl:'🏗️', social:'🏠', lpp:'🏢', lsp:'🌿',
-  villa:'🏡', maison:'🏠', appart:'🏢', residence:'🏙️', local:'🛍️',
-};
-
-const escHtml = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-// Only accept inline raster data URLs; the class excludes quotes and angle brackets,
-// so a crafted value cannot break out of the src attribute. Anything else -> ''.
-const safeImgSrc = v => {
-  const s = String(v == null ? '' : v);
-  return /^data:image\/(?:png|jpe?g|gif|webp|avif);base64,[A-Za-z0-9+\/=\s]+$/i.test(s) ? s : '';
-};
-
+// ══════════════════════════════════════════════════════
+// بطاقة السيارة
+// ══════════════════════════════════════════════════════
 function buildCardHTML(ad) {
-  const bg = CARD_TYPE_BG[ad.type] || 'linear-gradient(135deg,#E8F5EE,#C8E6D9)';
-  const icon = CARD_TYPE_ICON[ad.type] || '🏘️';
-  const safeId = String(ad.id == null ? '' : ad.id).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  const cardImgSrc = safeImgSrc(ad.imgBase64);
-  const imgHtml = cardImgSrc
-    ? `<img src="${cardImgSrc}" alt="" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"/>`
-    : `<div class="cimg-ph" style="background:${bg}">${icon}</div>`;
+  const safeId = escHtml(ad.id);
+  const imgs = adImages(ad);
+  const feat = isFeatured(ad);
+  const imgHtml = imgs.length
+    ? `<img src="${imgs[0]}" alt="" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"/>${imgs.length > 1 ? `<span class="c-count">📷 ${imgs.length}</span>` : ''}`
+    : `<div class="cimg-ph" style="background:linear-gradient(135deg,#E0F2FE,#BAE6FD)">🚗</div>`;
+  const sellerColor = ad.seller === 'dealer' ? '#0284C7' : '#64748B';
   return `
-  <div class="card" data-id="${safeId}">
+  <div class="card${feat ? ' card-feat' : ''}" data-id="${safeId}">
     <div class="cimg">
       ${imgHtml}
-      <span class="bt" style="background:${getTypeColor(ad.type)}">${escHtml(lPT(ad.type))}</span>
-      ${document.getElementById('homeMap') ? `<button type="button" class="c-onmap" data-act="map" aria-label="${currentLang==='fr'?'Voir sur la carte':'عرض على الخريطة'}">📍</button>` : ''}
-      <span class="bo" style="background:${getOpColor(ad.op)};color:#fff">${escHtml(lOP(ad.op))}</span>
-      <div class="status-badge" style="background:${getStatusColor(ad.status)}">${escHtml(lSTATUS(ad.status))}</div>
-      ${ad.feat ? '<div style="position:absolute;top:8px;right:8px;background:linear-gradient(135deg,#F0C855,#C9A84C);color:#0D3B2E;font-size:10px;font-weight:700;padding:3px 9px;border-radius:50px">⭐ مميز</div>' : ''}
+      ${ad.seller ? `<span class="bt" style="background:${sellerColor}">${escHtml(lab(SELLER, ad.seller))}</span>` : ''}
+      ${$('homeMap') ? `<button type="button" class="c-onmap" data-act="map" aria-label="${t('عرض على الخريطة', 'Voir sur la carte')}">📍</button>` : ''}
+      ${feat ? `<span class="bo feat-badge">⭐ ${t('مميز', 'Sponsorisé')}</span>` : ''}
     </div>
     <div class="cbody">
-      <div class="ctitle">${escHtml(ad.title || `${lPT(ad.type)} - ${lOP(ad.op)}`)}</div>
-      <div class="cloc">📍 ${escHtml(ad.commune || (currentLang==='fr'?'Alger':'الجزائر'))}</div>
+      <div class="ctitle">${escHtml(carTitle(ad))}</div>
+      <div class="cloc">📍 ${escHtml(wName(ad.wilaya) || t('الجزائر', 'Algérie'))}</div>
       <div class="cspecs">
-        <span>🛏️ ${escHtml(ROOMS[ad.rooms] || ad.rooms || '?')}</span>
-        <span>📐 ${escHtml(ad.area || '?')} m²</span>
-        ${ad.condition ? `<span>🔧 ${escHtml(lCOND(ad.condition))}</span>` : ''}
-        ${ad.date ? `<span>📅 ${escHtml(ad.date)}</span>` : ''}
+        ${ad.year ? `<span>📅 ${escHtml(ad.year)}</span>` : ''}
+        ${ad.km != null && ad.km !== '' ? `<span>🛣️ ${fmt(ad.km)} km</span>` : ''}
+        ${ad.fuel ? `<span>⛽ ${escHtml(lab(FUEL, ad.fuel))}</span>` : ''}
+        ${ad.gearbox ? `<span>⚙️ ${escHtml(lab(GEAR, ad.gearbox))}</span>` : ''}
       </div>
-      ${ad.desc ? `<div class="cdesc">${escHtml(ad.desc)}</div>` : ''}
       <div class="cfoot">
-        <div class="price">${Number(ad.price).toLocaleString('fr-DZ')} <small>DA</small></div>
+        <div class="price">${ad.price ? fmt(ad.price) : '—'} <small>DA</small>${ad.price ? `<div class="price-cent">${escHtml(centimes(ad.price))}</div>` : ''}</div>
       </div>
       <div class="cacts">
-        <button type="button" class="btn-wa" data-act="wa">💬 ${currentLang==='fr'?'WhatsApp':'واتساب'}</button>
-        <button type="button" class="btn-call" data-act="call">📞 ${currentLang==='fr'?'Appeler':'اتصال'}</button>
+        <button type="button" class="btn-wa" data-act="wa">💬 ${t('واتساب', 'WhatsApp')}</button>
+        <button type="button" class="btn-call" data-act="call">📞 ${t('اتصال', 'Appeler')}</button>
       </div>
     </div>
   </div>`;
 }
 
-// Delegated card actions — user data stays out of inline handlers
 document.addEventListener('click', e => {
   const card = e.target.closest('.card[data-id]');
   if (!card) return;
   const id = card.dataset.id;
   const actEl = e.target.closest('[data-act]');
-  if (!actEl) { if (window.openD) window.openD(id); return; }
-  const ad = DATA.find(x => String(x.id) === id);
+  if (!actEl) { window.openD(id); return; }
+  const ad = findAd(id);
   if (!ad) return;
-  const digits = String(ad.phone || '').replace(/\D/g, '');
   if (actEl.dataset.act === 'map') { if (window.DarnaMap) window.DarnaMap.focus(id); }
-  else if (actEl.dataset.act === 'wa') openWA(digits, ad.title || '', ad.id);
-  else if (actEl.dataset.act === 'call') dial(digits);
+  else if (actEl.dataset.act === 'wa') openWA(ad.phone, carTitle(ad), ad.id);
+  else if (actEl.dataset.act === 'call') dial(ad.phone);
 });
 
+function findAd(id) { return DATA.find(x => String(x.id) === String(id)); }
+
+function renderAds(list) {
+  const grid = $('grid');
+  if (!grid) return;
+  if ($('rn')) $('rn').textContent = list.length;
+  if ($('liveAdCount')) $('liveAdCount').textContent = DATA.length;
+  if (!dataLoaded) { grid.innerHTML = skeletonCardsHTML(6); return; }
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div style="font-size:48px;margin-bottom:12px">🔍</div><h3>${t('لا توجد سيارات مطابقة', 'Aucune voiture trouvée')}</h3><p>${t('جرّب تغيير الفلاتر أو البحث', 'Essayez de modifier les filtres ou la recherche')}</p></div>`;
+    return;
+  }
+  grid.innerHTML = list.map(buildCardHTML).join('');
+}
+
 // ══════════════════════════════════════════════════════
-// معاينة "أحدث العقارات" في الصفحة الرئيسية (6 فقط)
+// الصفحة الرئيسية: معاينة آخر السيارات
 // ══════════════════════════════════════════════════════
 const HOME_PREVIEW_COUNT = 6;
-
 function skeletonCardsHTML(n) {
   let out = '';
-  for (let i = 0; i < n; i++) {
-    out += `<div class="skeleton-card"><div class="sk-img"></div><div class="sk-line w60"></div><div class="sk-line w40"></div></div>`;
-  }
+  for (let i = 0; i < n; i++) out += `<div class="skeleton-card"><div class="sk-img"></div><div class="sk-line w60"></div><div class="sk-line w40"></div></div>`;
   return out;
 }
-
-function homeSearchIsActive() {
-  return !!(fSearch && fSearch.trim());
-}
+const filtersActive = () => !!(F.q.trim() || F.brand || F.wilaya || F.fuel !== 'all' || F.gear !== 'all' || F.seller !== 'all' || F.ymin || F.pmin || F.pmax !== Infinity || F.kmax !== Infinity);
 
 function buildListingsUrl() {
-  const params = new URLSearchParams();
-  if (fSearch && fSearch.trim()) params.set('search', fSearch.trim());
-  if (fOp !== 'all') params.set('transaction', fOp === 'bay3' ? 'sale' : (fOp === 'kira' ? 'rent' : fOp));
-  if (fCommune) params.set('commune', fCommune);
-  if (fRooms !== 'all') params.set('rooms', fRooms);
-  if (!homeShowAll) params.set('type', 'lpp');
-  return 'listings.html' + (params.toString() ? ('?' + params.toString()) : '');
+  const p = new URLSearchParams();
+  if (F.q.trim()) p.set('q', F.q.trim());
+  if (F.brand) p.set('brand', F.brand);
+  if (F.wilaya) p.set('wilaya', F.wilaya);
+  if (F.fuel !== 'all') p.set('fuel', F.fuel);
+  if (F.gear !== 'all') p.set('gear', F.gear);
+  return 'listings.html' + (p.toString() ? '?' + p.toString() : '');
 }
 
 function renderHomeLoading() {
-  const grid = document.getElementById('homeGrid');
+  const grid = $('homeGrid');
   if (!grid) return;
-  grid.classList.remove('home-error-mode');
   grid.innerHTML = skeletonCardsHTML(HOME_PREVIEW_COUNT);
   if (window.DarnaMap) window.DarnaMap.setState('loading');
-  const titleEl = document.getElementById('homeSectionTitle');
-  if (titleEl) {
-    const fr = currentLang === 'fr';
-    titleEl.innerHTML = fr ? 'Chargement des annonces…' : 'جارٍ تحميل العقارات...';
-  }
+  const title = $('homeSectionTitle');
+  if (title) title.textContent = t('جارٍ تحميل السيارات...', 'Chargement des annonces…');
 }
-
-window.retryLoadAds = function() {
-  dataLoadError = false;
-  renderHomeLoading();
-  startFirebaseListener();
-};
+window.retryLoadAds = function () { dataLoadError = false; renderHomeLoading(); startFirebaseListener(); };
 
 function renderHomeError() {
-  const grid = document.getElementById('homeGrid');
+  const grid = $('homeGrid');
   if (window.DarnaMap) window.DarnaMap.setState('error');
   if (!grid) return;
-  const fr = currentLang === 'fr';
-  grid.innerHTML = `<div class="home-status-box">
-    <div class="icon">⚠️</div>
-    <div>${fr ? "Impossible de charger les annonces." : 'تعذّر تحميل الإعلانات.'}</div>
-    <button class="btn-retry" onclick="retryLoadAds()">${fr ? 'Réessayer' : 'إعادة المحاولة'}</button>
-  </div>`;
+  grid.innerHTML = `<div class="home-status-box"><div class="icon">⚠️</div><div>${t('تعذّر تحميل الإعلانات.', 'Impossible de charger les annonces.')}</div><button class="btn-retry" onclick="retryLoadAds()">${t('إعادة المحاولة', 'Réessayer')}</button></div>`;
 }
 
 function renderHomePreview() {
-  const grid = document.getElementById('homeGrid');
+  const grid = $('homeGrid');
   if (!grid) return;
-  const fr = currentLang === 'fr';
-
   if (dataLoadError) { renderHomeError(); return; }
   if (!dataLoaded) { renderHomeLoading(); return; }
-
-  const searchActive = homeSearchIsActive();
-  const totalCount = displayList.length;
+  const total = displayList.length;
+  const active = filtersActive();
+  const title = $('homeSectionTitle');
+  if (title) {
+    title.innerHTML = active
+      ? `${t('نتائج البحث', 'Résultats')} <span class="cnt">— ${total}</span>`
+      : `${t('أحدث السيارات', 'Dernières voitures')} <span class="cnt">— ${total} ${t(total > 1 ? 'إعلانات' : 'إعلان', total > 1 ? 'annonces' : 'annonce')}</span>`;
+  }
+  const btn = $('homeViewAllBtn');
+  if (btn) {
+    btn.href = buildListingsUrl();
+    btn.textContent = active ? t('عرض جميع النتائج ←', 'Voir tous les résultats →') : t('عرض جميع السيارات ←', 'Voir toutes les voitures →');
+  }
   const items = displayList.slice(0, HOME_PREVIEW_COUNT);
-
-  // ── عنوان القسم + العداد ──
-  const titleEl = document.getElementById('homeSectionTitle');
-  const noteEl  = document.getElementById('homeSearchNote');
-  const viewAllBtn = document.getElementById('homeViewAllBtn');
-  if (titleEl) {
-    if (searchActive) {
-      titleEl.innerHTML = fr ? `Résultats <span class="cnt">${totalCount}</span>` : `نتائج البحث <span class="cnt">${totalCount}</span>`;
-    } else if (homeShowAll) {
-      titleEl.innerHTML = fr ? `Dernières annonces <span class="cnt">${totalCount}</span>` : `أحدث العقارات <span class="cnt">— ${totalCount} ${totalCount>1?'إعلانات':'إعلان'}</span>`;
-    } else {
-      titleEl.innerHTML = fr ? `Derniers appartements LPP <span class="cnt">${totalCount}</span>` : `أحدث شقق LPP <span class="cnt">— ${totalCount} ${totalCount>1?'إعلانات':'إعلان'}</span>`;
-    }
-  }
-  if (noteEl) {
-    noteEl.style.display = searchActive ? 'block' : 'none';
-    noteEl.textContent = searchActive
-      ? (fr ? `${totalCount} annonce(s) trouvée(s)` : `تم العثور على ${totalCount} عقار`)
-      : '';
-  }
-  if (viewAllBtn) {
-    viewAllBtn.href = buildListingsUrl();
-    viewAllBtn.innerHTML = searchActive
-      ? (fr ? 'Voir tous les résultats →' : 'عرض جميع النتائج ←')
-      : (homeShowAll
-          ? (fr ? 'Voir toutes les annonces →' : 'عرض جميع العقارات ←')
-          : (fr ? 'Voir tous les LPP →' : 'عرض جميع شقق LPP ←'));
-  }
-
-  if (items.length === 0) {
-    const T = LANG[currentLang];
-    grid.innerHTML = `<div class="home-status-box"><div class="icon">🔍</div><div>${T.noAds}</div><div style="font-size:12px;margin-top:4px">${T.noAdsSub}</div></div>`;
+  if (!items.length) {
+    grid.innerHTML = `<div class="home-status-box"><div class="icon">🔍</div><div>${t('لا توجد سيارات مطابقة', 'Aucune voiture trouvée')}</div><div style="font-size:12px;margin-top:4px">${t('جرّب فلتراً آخر', 'Essayez un autre filtre')}</div></div>`;
     return;
   }
-
-  grid.innerHTML = items.map(ad => buildCardHTML(ad)).join('');
-  requestAnimationFrame(() => updateHomeArrows());
+  grid.innerHTML = items.map(buildCardHTML).join('');
+  requestAnimationFrame(updateHomeArrows);
 }
-
-// ── أسهم التنقل (كمبيوتر فقط) ──
-window.homeScroll = function(dir) {
-  const grid = document.getElementById('homeGrid');
+window.homeScroll = function (dir) {
+  const grid = $('homeGrid');
   if (!grid) return;
   const card = grid.querySelector('.card');
-  const step = card ? (card.getBoundingClientRect().width + 16) : 300;
-  grid.scrollBy({ left: dir * step, behavior: 'smooth' });
+  grid.scrollBy({ left: dir * (card ? card.getBoundingClientRect().width + 16 : 300), behavior: 'smooth' });
 };
-
 function updateHomeArrows() {
-  const grid = document.getElementById('homeGrid');
-  const prevBtn = document.getElementById('homeArrowPrev');
-  const nextBtn = document.getElementById('homeArrowNext');
-  if (!grid || !prevBtn || !nextBtn) return;
-  const hasOverflow = grid.scrollWidth > grid.clientWidth + 4;
-  prevBtn.style.visibility = hasOverflow ? 'visible' : 'hidden';
-  nextBtn.style.visibility = hasOverflow ? 'visible' : 'hidden';
+  const grid = $('homeGrid'), p = $('homeArrowPrev'), n = $('homeArrowNext');
+  if (!grid || !p || !n) return;
+  const over = grid.scrollWidth > grid.clientWidth + 4;
+  p.style.visibility = n.style.visibility = over ? 'visible' : 'hidden';
 }
 
-// ── رابط "تجاوز الإعلانات" — ينقل المستخدم لتبويب الأسعار والنصائح ──
-window.skipToGuides = function() {
-  if (typeof switchTab === 'function') window.switchTab('prices');
-};
-
-// Global functions for HTML calls
+// ══════════════════════════════════════════════════════
+// نافذة التفاصيل
+// ══════════════════════════════════════════════════════
 let currentAdId = null;
-
-window.openD = function(id) {
-  const ad = DATA.find(x => x.id === id);
+window.openD = function (id) {
+  const ad = findAd(id);
   if (!ad) return;
-  const T = LANG[currentLang];
-  currentAdId = id;
-
-  // ── Schema ديناميكي SEO ──
-  injectAdSchema(ad);
-
-  // ── Meta Pixel: ViewContent ──
-  if (typeof fbq !== 'undefined') {
-    fbq('track', 'ViewContent', {
-      content_name: ad.title || `${lPT(ad.type)} - ${lOP(ad.op)}`,
-      content_category: lPT(ad.type),
-      content_ids: [id],
-      value: Number(ad.price) || 0,
-      currency: 'DZD'
-    });
+  currentAdId = ad.id;
+  const imgs = adImages(ad);
+  const mimg = $('mimg');
+  const showImg = i => {
+    mimg.style.background = '';
+    mimg.innerHTML = `<img src="${imgs[i]}" alt="${escHtml(carTitle(ad))}" style="width:100%;height:100%;object-fit:cover"/>`;
+    document.querySelectorAll('#mthumbs img').forEach((el, k) => el.classList.toggle('on', k === i));
+  };
+  if (imgs.length) showImg(0);
+  else { mimg.style.background = 'linear-gradient(135deg,#E0F2FE,#BAE6FD)'; mimg.innerHTML = '<div class="mimg-ph" style="background:transparent">🚗</div>'; }
+  const th = $('mthumbs');
+  if (th) {
+    th.innerHTML = imgs.length > 1 ? imgs.map((s, i) => `<img src="${s}" alt="" data-i="${i}"${i === 0 ? ' class="on"' : ''}/>`).join('') : '';
+    th.onclick = e => { const im = e.target.closest('img[data-i]'); if (im) showImg(Number(im.dataset.i)); };
   }
 
-  document.getElementById('mtt').innerHTML = escHtml(ad.title || `${lPT(ad.type)} - ${lOP(ad.op)}`);
-  const TYPE_ICON_MODAL = {
-    aadl:'🏗️', social:'🏠', lpp:'🏢', lsp:'🌿',
-    villa:'🏡', maison:'🏠', appart:'🏢', residence:'🏙️', local:'🛍️'
-  };
-  const modalIcon = TYPE_ICON_MODAL[ad.type] || '🏘️';
-  const TYPE_BG_MODAL = {
-    aadl:'linear-gradient(135deg,#DBEAFE,#BFDBFE)',
-    social:'linear-gradient(135deg,#EDE9FE,#DDD6FE)',
-    lpp:'linear-gradient(135deg,#FEE2E2,#FECACA)',
-    lsp:'linear-gradient(135deg,#D1FAE5,#A7F3D0)',
-    villa:'linear-gradient(135deg,#FEF3C7,#FDE68A)',
-    maison:'linear-gradient(135deg,#DCFCE7,#BBF7D0)',
-    appart:'linear-gradient(135deg,#E0F2FE,#BAE6FD)',
-    residence:'linear-gradient(135deg,#F3E8FF,#E9D5FF)',
-    local:'linear-gradient(135deg,#FFE4E6,#FECDD3)',
-  };
-  const modalImgSrc = safeImgSrc(ad.imgBase64);
-  if (modalImgSrc) {
-    document.getElementById('mimg').innerHTML =
-      `<img src="${modalImgSrc}" alt="${escHtml(ad.title||'')}" style="width:100%;height:100%;object-fit:cover"/>`;
-    document.getElementById('mimg').style.background = '';
-  } else {
-    document.getElementById('mimg').style.background = TYPE_BG_MODAL[ad.type] || 'linear-gradient(135deg,#E8F5EE,#C8E6D9)';
-    document.getElementById('mimg').innerHTML =
-      `<div class="mimg-ph" style="background:transparent">${modalIcon}</div>`;
-  }
-  document.getElementById('mbg').innerHTML = `
-    <span class="bt" style="background:${getTypeColor(ad.type)};position:static">${escHtml(lPT(ad.type))}</span>
-    <span class="bo" style="background:${getOpColor(ad.op)};position:static;color:#fff">${escHtml(lOP(ad.op))}</span>
-    <span style="background:${getStatusColor(ad.status)};color:white;padding:5px 13px;border-radius:50px">${escHtml(lSTATUS(ad.status))}</span>
-  `;
-  document.getElementById('mds').innerHTML = escHtml(ad.desc || (currentLang==='fr'?'Aucune description.':'لا يوجد وصف إضافي.'));
-  document.getElementById('msp').innerHTML = `
-    <div class="mspec"><strong>📍 ${escHtml(ad.commune||'—')}</strong>${T.specComm}</div>
-    <div class="mspec"><strong>🛏️ ${escHtml(ROOMS[ad.rooms]||ad.rooms||'?')}</strong>${T.specRooms}</div>
-    <div class="mspec"><strong>📐 ${escHtml(ad.area||'?')} m²</strong>${T.specArea}</div>
-    <div class="mspec"><strong>💰 ${Number(ad.price).toLocaleString('fr-DZ')} DA</strong>${T.specPrice}</div>
-    <div class="mspec"><strong>🔧 ${escHtml(lCOND(ad.condition))}</strong>${T.specCond}</div>
-    <div class="mspec"><strong>📅 ${escHtml(ad.date||'—')}</strong>${T.specDate}</div>
-  `;
-
-  // Views
-  document.getElementById('mviewsNum').textContent = ad.views || 0;
-
-  // i18n labels
-  document.getElementById('shareLinkLabel').textContent = currentLang==='fr'?'Copier le lien':'نسخ رابط الإعلان';
-  document.getElementById('mcall').textContent          = T.callBtn;
-
-  // Social: مشاركة الإعلان (لا تحتوي بيانات مستخدم)
-  const fr = currentLang==='fr';
-  document.getElementById('socialBtns').innerHTML = `
-    <button type="button" class="social-icon fb" title="${fr?'Partager sur Facebook':'مشاركة على فيسبوك'}">📘 ${fr?'Facebook':'فيسبوك'}</button>
-    <button type="button" class="social-icon messenger" title="${fr?'Partager sur Messenger':'مشاركة في ماسنجر'}">💬 ${fr?'Messenger':'ماسنجر'}</button>
-    <button type="button" class="social-icon whatsapp" title="${fr?'Partager sur WhatsApp':'مشاركة عبر واتساب'}">💚 ${fr?'WhatsApp':'واتساب'}</button>
-  `;
-  const socBtns = document.getElementById('socialBtns');
-  socBtns.querySelector('.fb').onclick = () => shareFB(id);
-  socBtns.querySelector('.messenger').onclick = () => shareMessenger(id);
-  socBtns.querySelector('.whatsapp').onclick = () => shareWA(id);
-  document.getElementById('mcall').onclick = () => dial(ad.phone);
-  document.getElementById('mwa').onclick   = () => openWA(ad.phone||'', ad.title||'', id);
-
-  // Increment views
-  updateDoc(doc(db,'clients',id),{views:(ad.views||0)+1}).catch(()=>{});
-
-  document.getElementById('dm').classList.add('open');
+  $('mtt').textContent = carTitle(ad);
+  $('mbg').innerHTML = `
+    ${isFeatured(ad) ? `<span style="background:linear-gradient(135deg,#F0C855,#C9A84C);color:#033a5a;padding:5px 13px;border-radius:50px;font-weight:800">⭐ ${t('مميز', 'Sponsorisé')}</span>` : ''}
+    ${ad.seller ? `<span style="background:${ad.seller === 'dealer' ? '#0284C7' : '#64748B'};color:#fff;padding:5px 13px;border-radius:50px">${escHtml(lab(SELLER, ad.seller))}</span>` : ''}`;
+  $('mds').textContent = ad.desc || t('لا يوجد وصف إضافي.', 'Aucune description.');
+  const spec = (icon, val, label) => `<div class="mspec"><strong>${icon} ${escHtml(val)}</strong>${label}</div>`;
+  $('msp').innerHTML = [
+    spec('💰', ad.price ? fmt(ad.price) + ' DA' : '—', `${t('السعر', 'Prix')}${ad.price ? ' · ' + escHtml(centimes(ad.price)) : ''}`),
+    spec('🚗', [ad.brand, ad.model].filter(Boolean).join(' ') || '—', t('الماركة والموديل', 'Marque et modèle')),
+    spec('📅', ad.year || '—', t('سنة الصنع', 'Année')),
+    spec('🛣️', ad.km != null && ad.km !== '' ? fmt(ad.km) + ' km' : '—', t('الكيلومترات', 'Kilométrage')),
+    spec('⛽', lab(FUEL, ad.fuel) || '—', t('الوقود', 'Carburant')),
+    spec('⚙️', lab(GEAR, ad.gearbox) || '—', t('ناقل الحركة', 'Boîte de vitesses')),
+    spec('📍', wName(ad.wilaya) || '—', t('الولاية', 'Wilaya')),
+    spec('📅', ad.date || '—', t('تاريخ النشر', 'Publié le'))
+  ].join('');
+  if ($('mviewsNum')) $('mviewsNum').textContent = ad.views || 0;
+  $('shareLinkLabel').textContent = t('نسخ رابط الإعلان', 'Copier le lien');
+  $('mcall').textContent = '📞 ' + t('اتصل الآن', 'Appeler');
+  $('socialBtns').innerHTML = `
+    <button type="button" class="social-icon fb">📘 ${t('فيسبوك', 'Facebook')}</button>
+    <button type="button" class="social-icon messenger">💬 ${t('ماسنجر', 'Messenger')}</button>
+    <button type="button" class="social-icon whatsapp">💚 ${t('واتساب', 'WhatsApp')}</button>`;
+  const sb = $('socialBtns');
+  sb.querySelector('.fb').onclick = () => shareFB(ad.id);
+  sb.querySelector('.messenger').onclick = () => shareMessenger(ad.id);
+  sb.querySelector('.whatsapp').onclick = () => shareWA(ad.id);
+  $('mcall').onclick = () => dial(ad.phone);
+  $('mwa').onclick = () => openWA(ad.phone, carTitle(ad), ad.id);
+  updateDoc(doc(db, 'clients', String(ad.id)), { views: (ad.views || 0) + 1 }).catch(() => {});
+  $('dm').classList.add('open');
 };
 
-// ── Copy ad link ──
-window.copyAdLink = function() {
-  const T = LANG[currentLang];
-  const link = `${location.origin}${location.pathname}#ad-${currentAdId}`;
-  navigator.clipboard.writeText(link).then(()=>toast(T.toastCopied)).catch(()=>{
-    const ad = DATA.find(x=>x.id===currentAdId);
-    const text = ad?`${lPT(ad.type)} - ${ad.commune} - ${Number(ad.price).toLocaleString()} DA`:'Darna Immo';
-    if(navigator.share) navigator.share({title:'Darna Immo',text,url:link});
-    else toast(T.toastCopied);
-  });
+// ══════════════════════════════════════════════════════
+// مشاركة واتصال
+// ══════════════════════════════════════════════════════
+window.adShareUrl = id => `${location.origin}${location.pathname.replace(/[^/]*$/, '')}index.html#ad-${encodeURIComponent(String(id))}`;
+const adShareText = ad => `🚗 ${carTitle(ad)}\n📍 ${wName(ad.wilaya)}\n💰 ${fmt(ad.price)} DA`;
+window.copyAdLink = function () {
+  const link = adShareUrl(currentAdId);
+  navigator.clipboard.writeText(link).then(() => toast(t('✅ تم نسخ الرابط', '✅ Lien copié'))).catch(() => toast(link));
 };
-
-window.adShareUrl = id => `${location.origin}${location.pathname}#ad-${encodeURIComponent(String(id))}`;
-function adShareText(ad) {
-  const price = Number(ad.price || 0).toLocaleString('fr-DZ');
-  return `🏠 ${ad.title || lPT(ad.type)}\n📍 ${ad.commune || ''}\n💰 ${price} DA`;
-}
-function findAd(id) { return DATA.find(x => String(x.id) === String(id)); }
-window.shareWA = function(id) {
-  const ad = findAd(id); if (!ad) return;
-  window.open('https://wa.me/?text=' + encodeURIComponent(adShareText(ad) + '\n' + adShareUrl(id)), '_blank', 'noopener');
-};
-window.shareFB = function(id) {
-  window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(adShareUrl(id)), '_blank', 'noopener');
-};
-window.shareMessenger = function(id) {
-  const url = adShareUrl(id), fr = currentLang === 'fr';
-  const copy = () => navigator.clipboard.writeText(url).then(() =>
-    toast(fr ? '✅ Lien copié — collez-le dans Messenger' : '✅ تم نسخ الرابط — الصقه في ماسنجر')).catch(() => {});
+window.shareWA = id => { const ad = findAd(id); if (ad) window.open('https://wa.me/?text=' + encodeURIComponent(adShareText(ad) + '\n' + adShareUrl(id)), '_blank', 'noopener'); };
+window.shareFB = id => window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(adShareUrl(id)), '_blank', 'noopener');
+window.shareMessenger = id => {
+  const url = adShareUrl(id);
+  const copy = () => navigator.clipboard.writeText(url).then(() => toast(t('✅ تم نسخ الرابط — الصقه في ماسنجر', '✅ Lien copié — collez-le dans Messenger'))).catch(() => {});
   if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
     window.location.href = 'fb-messenger://share/?link=' + encodeURIComponent(url);
     setTimeout(() => { if (!document.hidden) copy(); }, 1600);
-  } else {
-    window.open('https://www.messenger.com/', '_blank', 'noopener');
-    copy();
-  }
+  } else { window.open('https://www.messenger.com/', '_blank', 'noopener'); copy(); }
 };
-window.openWA = function(phone, title, adId) {
-  // ── Meta Pixel: Contact ──
-  if (typeof fbq !== 'undefined') fbq('track', 'Contact', { content_name: title });
-  let clean = String(phone == null ? '' : phone).replace(/\D/g, '');
-  if (!clean) { toast(currentLang === 'fr' ? '⚠️ Numéro indisponible' : '⚠️ رقم الهاتف غير متوفر', 'red'); return; }
-  if (clean.startsWith('0')) clean = '213' + clean.slice(1);
+function intlPhone(p) {
+  let c = String(p == null ? '' : p).replace(/\D/g, '');
+  if (c.startsWith('00')) c = c.slice(2);
+  if (c.startsWith('0')) c = '213' + c.slice(1);
+  return c;
+}
+window.openWA = function (phone, title, adId) {
+  const clean = intlPhone(phone);
+  if (!clean) { toast(t('⚠️ رقم الهاتف غير متوفر', '⚠️ Numéro indisponible'), 'red'); return; }
   const ad = adId != null ? findAd(adId) : null;
-  let msg = `السلام عليكم، أنا مهتم بإعلانك "${title}" على دارنا إيمو.`;
-  if (ad && Number(ad.price)) msg += `\nالسعر المعلن: ${Number(ad.price).toLocaleString('fr-DZ')} دج`;
+  let msg = `السلام عليكم، أنا مهتم بإعلانك "${title}" على ${SITE_NAME}.`;
+  if (ad && Number(ad.price)) msg += `\nالسعر المعلن: ${fmt(ad.price)} دج`;
   if (adId != null) msg += `\n${adShareUrl(adId)}`;
-  window.open(`https://wa.me/${clean}?text=${encodeURIComponent(msg)}`, '_blank');
+  window.open(`https://wa.me/${clean}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
 };
-window.shareNews = function() {
-  const text = '🚨 خطأ قد يكلفك ملايين!\nقبل شراء أي عقار في الجزائر، تأكد من:\n📄 عقد الملكية\n📘 الدفتر العقاري\n📑 شهادة الحالة الرهنية\n🏗 شهادة المطابقة\n\nاكتشف المزيد على منصة دارنا إيمو 🏠';
-  if (navigator.share) {
-    navigator.share({ title: 'نصيحة عقارية – دارنا إيمو', text });
-  } else {
-    navigator.clipboard.writeText(text).then(() => toast('✅ تم نسخ النصيحة — شاركها مع أصدقائك!'));
-  }
-};
-window.shareAd = function(id) {
-  const T = LANG[currentLang];
-  const ad = DATA.find(x => x.id === id);
-  const text = ad ? `${lPT(ad.type)} - ${ad.commune} - ${Number(ad.price).toLocaleString()} DA` : 'Darna Immo';
-  if (navigator.share) navigator.share({ title: 'Darna Immo', text });
-  else navigator.clipboard.writeText(text).then(() => toast(T.toastCopied));
-};
-window.dial = function(num) {
-  const T = LANG[currentLang];
+window.dial = function (num) {
   const digits = String(num == null ? '' : num).replace(/\D/g, '');
-  // ── Meta Pixel: Contact ──
-  if (typeof fbq !== 'undefined') fbq('track', 'Contact');
-  toast(`${T.toastCalling}${digits}`);
-  setTimeout(() => window.location.href = `tel:${digits}`, 800);
+  if (!digits) return;
+  toast(t('📞 جارٍ الاتصال بـ ', '📞 Appel vers ') + digits);
+  setTimeout(() => { window.location.href = `tel:${digits}`; }, 600);
 };
-window.tfav = function(e, id) {
-  e.stopPropagation();
-  const T = LANG[currentLang];
-  const btn = document.getElementById(`fv${id}`);
-  if (favs.has(id)) {
-    favs.delete(id);
-    if (btn) btn.innerText = '🤍';
-    toast(T.toastFavRem);
-  } else {
-    favs.add(id);
-    if (btn) btn.innerText = '❤️';
-    toast(T.toastFavAdd);
-  }
+window.cm = id => $(id).classList.remove('open');
+window.cov = (e, id) => { if (e.target.id === id) window.cm(id); };
+window.toast = function (msg, cls) {
+  const el = $('tst');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'toast' + (cls ? ' ' + cls : '');
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
 };
-window.af = function() {
-  fCommune = document.getElementById('fcm').value;
-  priceMin = parseFloat(document.getElementById('pmin').value) || 0;
-  priceMax = parseFloat(document.getElementById('pmax').value) || Infinity;
-  applyFilters();
+const toast = window.toast;
+
+// ══════════════════════════════════════════════════════
+// الإعلان المميز: طلب التفعيل عبر واتساب
+// ══════════════════════════════════════════════════════
+const ownerConfigured = () => /^\d{11,14}$/.test(OWNER_WHATSAPP) && !/^2130{8,}$/.test(OWNER_WHATSAPP);
+window.requestFeatured = function (id) {
+  const ad = id ? findAd(id) : null;
+  const ref = id || '';
+  const msg = `السلام عليكم، أريد تمييز إعلاني على ${SITE_NAME} لمدة ${FEAT_DAYS} أيام مقابل ${FEAT_PRICE} دج.` +
+    (ref ? `\nرقم الإعلان: ${ref}` : '') + (ad ? `\n${carTitle(ad)}` : '') + '\nكيف أدفع؟';
+  if (!ownerConfigured()) { toast(t('⚠️ لم يُضبط رقم واتساب صاحب الموقع بعد', '⚠️ Numéro WhatsApp du site non configuré'), 'red'); return; }
+  window.open(`https://wa.me/${OWNER_WHATSAPP}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
 };
-window.sl = function() { sortAndRender(); };
-window.doSearch = function() {
-  fSearch = document.getElementById('searchQ').value;
-  // ── Meta Pixel: Search ──
-  if (typeof fbq !== 'undefined' && fSearch.trim()) {
-    fbq('track', 'Search', { search_string: fSearch.trim() });
-  }
-  applyFilters();
-};
-window.cm = function(id) { document.getElementById(id).classList.remove('open'); };
-window.cov = function(e, id) { if (e.target.id === id) window.cm(id); };
-window.toast = function(msg, cls) {
-  const tst = document.getElementById('tst');
-  tst.textContent = msg;
-  tst.className = 'toast' + (cls ? ' ' + cls : '');
-  tst.classList.add('show');
-  setTimeout(() => tst.classList.remove('show'), 2800);
-};
-window.openPost = function() { document.getElementById('pm').classList.add('open'); };
-window.sub = async function() {
-  const T = LANG[currentLang];
-  const comSel = document.getElementById('pcom');
-  const chosenCom = comSel ? comSel.value : '';
-  let loc = document.getElementById('pl').value.trim();
-  if (chosenCom && !loc) loc = chosenCom;
-  else if (chosenCom && loc.indexOf(chosenCom) === -1) loc = chosenCom + ' – ' + loc;
-  const phone = document.getElementById('ph').value.trim();
-  const priceRaw = document.getElementById('pp').value.trim();
-  if (!loc || !phone || !priceRaw) {
-    toast(T.toastFillAll, 'red');
-    return;
-  }
+function showFeatPrompt(id) {
+  const box = $('featPrompt');
+  if (!box) return;
+  const idEl = $('featAdId'); if (idEl) idEl.textContent = id;
+  const go = $('featGo'); if (go) go.onclick = () => { window.requestFeatured(id); window.cm('featPrompt'); };
+  box.classList.add('open');
+}
+
+// ══════════════════════════════════════════════════════
+// نموذج النشر
+// ══════════════════════════════════════════════════════
+const MAX_IMGS = 4;
+let postImgs = [];
+
+function fillPostSelects() {
+  const keep = id => ($(id) ? $(id).value : '');
+  const set = (id, html, val) => { const el = $(id); if (!el) return; el.innerHTML = html; if (val) el.value = val; };
+  const yearNow = new Date().getFullYear() + 1;
+  let years = '';
+  for (let y = yearNow; y >= 1980; y--) years += `<option value="${y}">${y}</option>`;
+  set('pbrand', `<option value="">${t('اختر الماركة', 'Choisir la marque')}</option>` + BRANDS.map(b => `<option>${escHtml(b)}</option>`).join(''), keep('pbrand'));
+  set('pyear', `<option value="">${t('السنة', 'Année')}</option>` + years, keep('pyear'));
+  set('pfuel', Object.keys(FUEL).map(k => `<option value="${k}">${escHtml(lab(FUEL, k))}</option>`).join(''), keep('pfuel'));
+  set('pgear', Object.keys(GEAR).map(k => `<option value="${k}">${escHtml(lab(GEAR, k))}</option>`).join(''), keep('pgear'));
+  set('pseller', Object.keys(SELLER).map(k => `<option value="${k}">${escHtml(lab(SELLER, k))}</option>`).join(''), keep('pseller'));
+  set('pwil', `<option value="">${t('اختر الولاية', 'Choisir la wilaya')}</option>` + WILAYAS.map(w => `<option value="${w.code}">${escHtml(wLabel(w))}</option>`).join(''), keep('pwil'));
+}
+
+window.openPost = function () { $('pm').classList.add('open'); };
+
+window.sub = async function () {
+  const brand = $('pbrand').value;
+  const model = $('pmodel').value.trim();
+  const year = parseInt($('pyear').value, 10);
+  const km = parseInt($('pkm').value, 10);
+  const wilaya = parseInt($('pwil').value, 10);
+  const price = parseInt($('pp').value, 10);
+  const phone = $('ph').value.trim();
   const cleanPhone = phone.replace(/\D/g, '');
-  if (cleanPhone.length < 9 || cleanPhone.length > 13) {
-    toast(T.toastBadPhone, 'red');
-    return;
-  }
+  if (!brand || !year || !wilaya || !(price > 0) || !phone || isNaN(km)) { toast(t('⚠️ أكمل الماركة والسنة والكيلومترات والولاية والسعر والهاتف', '⚠️ Remplissez marque, année, km, wilaya, prix et téléphone'), 'red'); return; }
+  if (km < 0 || km > 2000000) { toast(t('⚠️ عدد الكيلومترات غير صحيح', '⚠️ Kilométrage invalide'), 'red'); return; }
+  if (price > 1000000000) { toast(t('⚠️ السعر غير صحيح', '⚠️ Prix invalide'), 'red'); return; }
+  if (cleanPhone.length < 9 || cleanPhone.length > 13) { toast(t('⚠️ رقم الهاتف غير صحيح', '⚠️ Numéro de téléphone invalide'), 'red'); return; }
   const btn = document.querySelector('.btn-submit');
   btn.disabled = true;
-  btn.textContent = T.toastPosting;
+  btn.textContent = t('⏳ جارٍ النشر...', '⏳ Publication…');
   try {
-      const docData = {
-        type: document.getElementById('pt').value,
-        op: document.getElementById('po').value,
-        rooms: document.getElementById('pr').value,
-        condition: document.getElementById('pcond').value,
-        status: document.getElementById('pstat').value,
-        title: `${PT[document.getElementById('pt').value]} - ${loc}`,
-        commune: chosenCom || loc.split(/[-–]/)[0].trim(),
-        area: parseInt(document.getElementById('pa').value) || 0,
-        price: parseInt(priceRaw) || 0,
-        desc: document.getElementById('pd').value || '',
-        phone: phone,
-        date: new Date().toISOString().slice(0, 10),
-        createdAt: Date.now(),
-        views: 0
-      };
-      if (uploadedImgBase64) docData.imgBase64 = uploadedImgBase64;
-      await addDoc(adsCol, docData);
+    const docData = {
+      brand, model: model.slice(0, 40), year, km,
+      fuel: $('pfuel').value, gearbox: $('pgear').value, seller: $('pseller').value,
+      wilaya, price,
+      title: [brand, model, year].filter(Boolean).join(' ').slice(0, 100),
+      desc: $('pd').value.trim().slice(0, 1500),
+      phone, date: new Date().toISOString().slice(0, 10),
+      createdAt: Date.now(), views: 0
+    };
+    if (postImgs.length) { docData.imgs = postImgs.slice(); docData.imgBase64 = postImgs[0]; }
+    const ref = await addDoc(adsCol, docData);
     window.cm('pm');
-    document.getElementById('pl').value = '';
-    if (comSel) comSel.value = '';
-    document.getElementById('ph').value = '';
-    document.getElementById('pp').value = '';
-    document.getElementById('pa').value = '';
-    document.getElementById('pd').value = '';
-    resetImgUpload();
-    toast(T.toastPosted);
+    ['pmodel', 'pkm', 'pp', 'ph', 'pd'].forEach(id => { $(id).value = ''; });
+    $('pbrand').value = ''; $('pyear').value = ''; $('pwil').value = '';
+    resetImgs();
+    toast(t('✅ تم نشر إعلانك بنجاح!', '✅ Annonce publiée !'));
+    showFeatPrompt(ref.id);
   } catch (e) {
-    toast(T.toastFailed, 'red');
+    console.error(e);
+    toast(t('❌ فشل النشر، حاول مجدداً', '❌ Échec de la publication'), 'red');
   }
   btn.disabled = false;
-  btn.textContent = T.submitBtn;
+  btn.textContent = t('🚀 نشر الإعلان مجاناً', '🚀 Publier gratuitement');
 };
 
+// ── الصور: حتى 4 صور مضغوطة ──
+function compressImage(dataUrl, width, quality) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onerror = () => resolve(null);
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      const r = Math.min(1, width / img.width);
+      c.width = Math.round(img.width * r); c.height = Math.round(img.height * r);
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      resolve(c.toDataURL('image/jpeg', quality));
+    };
+    img.src = dataUrl;
+  });
+}
+async function processAndCompress(dataUrl) {
+  // الهدف: ≤ 170 ألف حرف لكل صورة، لأن مستند Firestore لا يتجاوز 1 ميغابايت
+  for (const [w, q] of [[1000, 0.72], [1000, 0.6], [900, 0.5], [800, 0.45], [640, 0.4]]) {
+    const c = await compressImage(dataUrl, w, q);
+    if (c && c.length < 170000) return c;
+  }
+  return null;
+}
+const readFile = f => new Promise(res => { const r = new FileReader(); r.onload = e => res(e.target.result); r.onerror = () => res(null); r.readAsDataURL(f); });
+
+window.handleImgUpload = async function (input) {
+  const files = Array.from(input.files || []);
+  input.value = '';
+  for (const file of files) {
+    if (postImgs.length >= MAX_IMGS) { toast(t(`⚠️ الحد الأقصى ${MAX_IMGS} صور`, `⚠️ Maximum ${MAX_IMGS} photos`), 'red'); break; }
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) { toast(t('⚠️ صيغة غير مدعومة (JPG / PNG / WebP)', '⚠️ Format non supporté'), 'red'); continue; }
+    if (file.size > 15 * 1024 * 1024) { toast(t('⚠️ حجم الصورة يتجاوز 15MB', '⚠️ Image trop lourde (max 15MB)'), 'red'); continue; }
+    const raw = await readFile(file);
+    const small = raw && await processAndCompress(raw);
+    if (!small) { toast(t('الصورة غير صالحة أو غير مدعومة', 'Image invalide'), 'red'); continue; }
+    postImgs.push(small);
+  }
+  renderPostThumbs();
+};
+window.removeImg = function (i) { postImgs.splice(i, 1); renderPostThumbs(); };
+function resetImgs() { postImgs = []; renderPostThumbs(); }
+function renderPostThumbs() {
+  const box = $('postThumbs');
+  if (!box) return;
+  box.innerHTML = postImgs.map((s, i) => `<div class="pthumb"><img src="${s}" alt=""/><button type="button" onclick="removeImg(${i})" aria-label="x">✕</button></div>`).join('');
+  const add = $('imgAddBtn');
+  if (add) add.style.display = postImgs.length >= MAX_IMGS ? 'none' : '';
+}
+
 // ══════════════════════════════════════════════════════
-// FILTER SYSTEM – نظام فلاتر موحد بدون أخطاء
+// عناصر الفلاتر: كل عنصر يحمل data-f (اسم الفلتر) و data-v (قيمة الزر)
 // ══════════════════════════════════════════════════════
-//
-// مبدأ التصميم:
-//   • State واحد مركزي (fTypes, fOp, fRooms …)
-//   • دالة واحدة syncChipUI() تُحدّث مظهر كل الأزرار (Sidebar + Drawer + Strip)
-//   • كل زر عند الضغط: يُعدّل State ثم يستدعي syncChipUI() + applyFilters()
-//   • لا cloneNode، لا chip.click()، لا تعارض
-//
-// ──────────────────────────────────────────────────────
+function buildFilterControls() {
+  document.querySelectorAll('select[data-f="brand"]').forEach(s => {
+    s.innerHTML = `<option value="">${t('كل الماركات', 'Toutes les marques')}</option>` + BRANDS.map(b => `<option>${escHtml(b)}</option>`).join('');
+  });
+  document.querySelectorAll('select[data-f="wilaya"]').forEach(s => {
+    s.innerHTML = `<option value="">${t('كل الولايات', 'Toutes les wilayas')}</option>` + WILAYAS.map(w => `<option value="${w.code}">${escHtml(wLabel(w))}</option>`).join('');
+  });
+  const chips = (f, table, allLabel) => document.querySelectorAll(`[data-chips="${f}"]`).forEach(box => {
+    const cls = box.dataset.cls || 'chip';
+    box.innerHTML = `<button type="button" class="${cls}" data-f="${f}" data-v="all">${allLabel}</button>` +
+      Object.keys(table).map(k => `<button type="button" class="${cls}" data-f="${f}" data-v="${k}">${escHtml(lab(table, k))}</button>`).join('');
+  });
+  chips('fuel', FUEL, t('الكل', 'Tous'));
+  chips('gear', GEAR, t('الكل', 'Tous'));
+  chips('seller', SELLER, t('الكل', 'Tous'));
+  const yrs = document.querySelectorAll('select[data-f="ymin"]');
+  let o = `<option value="0">${t('أي سنة', 'Toute année')}</option>`;
+  for (let y = new Date().getFullYear(); y >= 2000; y -= 1) o += `<option value="${y}">${t('من ', 'À partir de ')}${y}</option>`;
+  yrs.forEach(s => { s.innerHTML = o; });
+  syncControls();
+}
 
-// ── تحديث مظهر كل الأزرار بناءً على State الحالي ──
-function syncChipUI() {
-  // نوع العقار – متعدد الاختيار (toggle)
-  document.querySelectorAll('[data-group="type"]').forEach(btn => {
-    btn.classList.toggle('on', fTypes.has(btn.dataset.val));
-  });
-  // "الكل" لنوع العقار: مضاء إذا كل الأنواع مختارة
-  const allTypesSelected = Object.keys(PT).every(k => fTypes.has(k));
-  document.querySelectorAll('[data-group="type-all"]').forEach(btn => {
-    btn.classList.toggle('on', allTypesSelected);
-  });
-
-  // نوع العملية – اختيار واحد
-  document.querySelectorAll('[data-group="op"]').forEach(btn => {
-    btn.classList.toggle('on', btn.dataset.val === fOp);
-  });
-  document.querySelectorAll('[data-group="op-all"]').forEach(btn => {
-    btn.classList.toggle('on', fOp === 'all');
-  });
-
-  // الغرف – اختيار واحد
-  document.querySelectorAll('[data-group="rooms"]').forEach(btn => {
-    btn.classList.toggle('on', btn.dataset.val === fRooms);
-  });
-  document.querySelectorAll('[data-group="rooms-all"]').forEach(btn => {
-    btn.classList.toggle('on', fRooms === 'all');
-  });
-
-  // الحالة – اختيار واحد
-  document.querySelectorAll('[data-group="cond"]').forEach(btn => {
-    btn.classList.toggle('on', btn.dataset.val === fCondition);
-  });
-  document.querySelectorAll('[data-group="cond-all"]').forEach(btn => {
-    btn.classList.toggle('on', fCondition === 'all');
-  });
-
-  // حالة الإعلان – اختيار واحد
-  document.querySelectorAll('[data-group="status"]').forEach(btn => {
-    btn.classList.toggle('on', btn.dataset.val === fStatus);
-  });
-  document.querySelectorAll('[data-group="status-all"]').forEach(btn => {
-    btn.classList.toggle('on', fStatus === 'all');
-  });
-
-  // شريط الموبايل
-  document.querySelectorAll('[data-group="strip"]').forEach(btn => {
-    const v = btn.dataset.val;
-    if (!v) { // زر "الكل"
-      btn.classList.toggle('on', allTypesSelected);
-    } else {
-      btn.classList.toggle('on', fTypes.has(v) && fTypes.size === 1 && [...fTypes][0] === v);
+function syncControls() {
+  document.querySelectorAll('[data-f]').forEach(el => {
+    const f = el.dataset.f;
+    if (el.tagName === 'BUTTON') {
+      const cur = F[f];
+      const on = String(cur) === el.dataset.v;
+      el.classList.toggle('active', on);
+      el.classList.toggle('on', on);
+      return;
     }
+    if (document.activeElement === el) return;
+    if (f === 'brand' || f === 'wilaya') el.value = F[f] || '';
+    else if (f === 'ymin') el.value = String(F.ymin || 0);
+    else if (f === 'pmin') el.value = F.pmin || '';
+    else if (f === 'pmax') el.value = F.pmax === Infinity ? '' : F.pmax;
+    else if (f === 'kmax') el.value = F.kmax === Infinity ? '' : F.kmax;
   });
+  const q = $('searchQ'); if (q && document.activeElement !== q) q.value = F.q;
 }
 
-// ── صانع زر عام ──
-function makeChip(text, groupAttr, valAttr, onClickFn, extraClass='') {
-  const btn = document.createElement('button');
-  btn.className = 'chip' + (extraClass ? ' ' + extraClass : '');
-  btn.dataset.group = groupAttr;
-  if (valAttr !== null) btn.dataset.val = valAttr;
-  btn.innerText = text;
-  btn.addEventListener('click', () => { onClickFn(); syncChipUI(); applyFilters(); });
-  return btn;
+function readControl(el) {
+  const f = el.dataset.f;
+  if (el.tagName === 'BUTTON') { F[f] = el.dataset.v; return; }
+  const v = el.value;
+  if (f === 'brand') F.brand = v;
+  else if (f === 'wilaya') F.wilaya = v;
+  else if (f === 'ymin') F.ymin = parseInt(v, 10) || 0;
+  else if (f === 'pmin') F.pmin = parseFloat(v) || 0;
+  else if (f === 'pmax') F.pmax = parseFloat(v) || Infinity;
+  else if (f === 'kmax') F.kmax = parseFloat(v) || Infinity;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('button[data-f]');
+  if (!b) return;
+  readControl(b); syncControls(); applyFilters();
+});
+document.addEventListener('change', e => {
+  const el = e.target.closest('select[data-f], input[data-f]');
+  if (!el) return;
+  readControl(el); syncControls(); applyFilters();
+});
+window.doSearch = function () { F.q = ($('searchQ') ? $('searchQ').value : ''); applyFilters(); };
+window.resetFilters = function () {
+  Object.assign(F, { q: '', brand: '', wilaya: '', fuel: 'all', gear: 'all', seller: 'all', ymin: 0, pmin: 0, pmax: Infinity, kmax: Infinity });
+  syncControls(); applyFilters();
+};
+window.openFilterDrawer = () => { $('filterDrawer').classList.add('open'); $('filterOverlay').classList.add('open'); };
+window.closeFilterDrawer = () => { $('filterDrawer').classList.remove('open'); $('filterOverlay').classList.remove('open'); };
+
+function applyUrlParams() {
+  const p = new URLSearchParams(location.search);
+  if (p.get('q')) F.q = p.get('q').slice(0, 80);
+  if (p.get('brand') && BRANDS.includes(p.get('brand'))) F.brand = p.get('brand');
+  if (p.get('wilaya') && wilayaByCode(p.get('wilaya'))) F.wilaya = String(Number(p.get('wilaya')));
+  if (p.get('fuel') && FUEL[p.get('fuel')]) F.fuel = p.get('fuel');
+  if (p.get('gear') && GEAR[p.get('gear')]) F.gear = p.get('gear');
 }
 
-// ── بناء الفلاتر في Sidebar والـ Drawer (نفس الأزرار، نفس الـ group) ──
-function buildFilterSection(typeDiv, opDiv, roomDiv, condDiv, statusDiv) {
-  if (!typeDiv) return;
-
-  // ── نوع العقار ──
-  // "الكل" لنوع العقار: يُعيد تحديد كل الأنواع
-  const typeAllBtn = makeChip('الكل', 'type-all', null, () => {
-    Object.keys(PT).forEach(k => fTypes.add(k));
-  });
-  typeDiv.appendChild(typeAllBtn);
-
-  Object.keys(PT).forEach(t => {
-    const btn = makeChip(PT[t], 'type', t, () => {
-      if (fTypes.has(t) && fTypes.size > 1) fTypes.delete(t);
-      else if (!fTypes.has(t)) fTypes.add(t);
-      // إذا أصبح لا شيء محدداً، أعد اختيار هذا النوع
-      if (fTypes.size === 0) fTypes.add(t);
-    });
-    typeDiv.appendChild(btn);
-  });
-
-  // ── نوع العملية ──
-  if (opDiv) {
-    opDiv.appendChild(makeChip('الكل', 'op-all', null, () => { fOp = 'all'; }));
-    Object.keys(OP).forEach(o => {
-      opDiv.appendChild(makeChip(OP[o], 'op', o, () => { fOp = fOp === o ? 'all' : o; }));
-    });
-  }
-
-  // ── الغرف ──
-  if (roomDiv) {
-    roomDiv.appendChild(makeChip('الكل', 'rooms-all', null, () => { fRooms = 'all'; }));
-    Object.keys(ROOMS).forEach(r => {
-      roomDiv.appendChild(makeChip(ROOMS[r], 'rooms', r, () => { fRooms = fRooms === r ? 'all' : r; }));
-    });
-  }
-
-  // ── حالة العقار ──
-  if (condDiv) {
-    condDiv.appendChild(makeChip('الكل', 'cond-all', null, () => { fCondition = 'all'; }));
-    Object.keys(COND).forEach(c => {
-      condDiv.appendChild(makeChip(COND[c], 'cond', c, () => { fCondition = fCondition === c ? 'all' : c; }));
-    });
-  }
-
-  // ── حالة الإعلان ──
-  if (statusDiv) {
-    statusDiv.appendChild(makeChip('الكل', 'status-all', null, () => { fStatus = 'all'; }));
-    Object.keys(STATUS).forEach(s => {
-      statusDiv.appendChild(makeChip(STATUS[s], 'status', s, () => { fStatus = fStatus === s ? 'all' : s; }));
-    });
-  }
+// ══════════════════════════════════════════════════════
+// اللغة
+// ══════════════════════════════════════════════════════
+function applyLang(lang) {
+  currentLang = lang;
+  try { localStorage.setItem('cm_lang', lang); } catch (e) {}
+  document.documentElement.lang = lang;
+  if (window.DarnaI18n) window.DarnaI18n.apply();
+  const lb = $('langBtn'); if (lb) lb.textContent = lang === 'ar' ? 'FR' : 'عربي';
+  const q = $('searchQ'); if (q) q.placeholder = t('ابحث: ماركة، موديل، ولاية...', 'Marque, modèle, wilaya…');
+  fillPostSelects();
+  buildFilterControls();
+  if (window.DarnaMap) window.DarnaMap.relabel();
+  if (dataLoaded) applyFilters();
 }
+window.toggleLang = () => applyLang(currentLang === 'ar' ? 'fr' : 'ar');
 
-function initFilters() {
-  // ── Sidebar ──
-  buildFilterSection(
-    document.getElementById('typeChips'),
-    document.getElementById('opChips'),
-    document.getElementById('roomChips'),
-    document.getElementById('conditionChips'),
-    document.getElementById('statusChips')
-  );
-
-  // ── Mobile Drawer (نفس المنطق، نفس الـ data-group ← نفس syncChipUI) ──
-  buildFilterSection(
-    document.getElementById('typeChipsMob'),
-    document.getElementById('opChipsMob'),
-    document.getElementById('roomChipsMob'),
-    document.getElementById('conditionChipsMob'),
-    document.getElementById('statusChipsMob')
-  );
-
-  // ── Mobile Strip (شريط سريع فوق الشبكة) ──
-  const mobStrip = document.getElementById('mobStrip');
-  if (mobStrip) {
-    const stripAll = makeChip('الكل', 'strip', null, () => {
-      Object.keys(PT).forEach(k => fTypes.add(k));
-    });
-    mobStrip.appendChild(stripAll);
-
-    ['aadl','social','lpp','lsp','villa','maison','appart','local'].forEach(t => {
-      const btn = makeChip(PT[t], 'strip', t, () => {
-        fTypes = new Set([t]);
-      });
-      btn.style.whiteSpace = 'nowrap';
-      btn.style.flexShrink = '0';
-      mobStrip.appendChild(btn);
-    });
-
-    // ── فاصل مرئي ──
-    const sep = document.createElement('div');
-    sep.style.cssText = 'width:1px;background:var(--border);flex-shrink:0;align-self:stretch;margin:4px 0';
-    mobStrip.appendChild(sep);
-
-    // ── بيع / كراء كفلتر عملية سريع ──
-    const opBtns = [];
-    [{v:'all',ar:'🔄 الكل'},{v:'bay3',ar:'🏷️ بيع'},{v:'kira',ar:'🔑 كراء'}].forEach(({v,ar}) => {
-      const btn = document.createElement('button');
-      btn.className = 'chip' + (v === 'all' ? ' on' : '');
-      btn.style.cssText = 'white-space:nowrap;flex-shrink:0';
-      btn.innerText = ar;
-      btn.dataset.opval = v;
-      btn.addEventListener('click', () => {
-        fOp = v;
-        opBtns.forEach(b => b.classList.toggle('on', b.dataset.opval === v));
-        applyFilters();
-      });
-      opBtns.push(btn);
-      mobStrip.appendChild(btn);
-    });
-  }
-
-  // ── تحديث لغة الأزرار عند تغيير اللغة ──
-  // (يتم عبر applyTranslation الذي يستدعي syncFilterLabels)
-
-  // حالة البداية: كل شيء مفعّل
-  syncChipUI();
-}
-
-// ── تحديث نصوص الأزرار عند تغيير اللغة ──
-function syncFilterLabels() {
-  const T = LANG[currentLang];
-  const allLabel = T.all;
-
-  document.querySelectorAll('[data-group="type-all"]').forEach(b => { b.innerText = allLabel; });
-  document.querySelectorAll('[data-group="type"]').forEach(b => { b.innerText = lPT(b.dataset.val); });
-  document.querySelectorAll('[data-group="op-all"]').forEach(b => { b.innerText = allLabel; });
-  document.querySelectorAll('[data-group="op"]').forEach(b => { b.innerText = lOP(b.dataset.val); });
-  document.querySelectorAll('[data-group="rooms-all"]').forEach(b => { b.innerText = allLabel; });
-  document.querySelectorAll('[data-group="cond-all"]').forEach(b => { b.innerText = allLabel; });
-  document.querySelectorAll('[data-group="cond"]').forEach(b => {
-    b.innerText = b.dataset.val === 'neuf' ? T.condNeuf : T.condUsed;
-  });
-  document.querySelectorAll('[data-group="status-all"]').forEach(b => { b.innerText = allLabel; });
-  document.querySelectorAll('[data-group="status"]').forEach(b => {
-    if (b.dataset.val === 'dispo')    b.innerText = T.statDispo;
-    if (b.dataset.val === 'reserved') b.innerText = T.statReserved;
-    if (b.dataset.val === 'sold')     b.innerText = T.statSold;
-    if (b.dataset.val === 'rented')   b.innerText = T.statRented;
-  });
-  document.querySelectorAll('[data-group="strip"]').forEach(b => {
-    if (!b.dataset.val) b.innerText = allLabel;
-    else b.innerText = lPT(b.dataset.val);
-  });
-}
-
-// ── شاشة الترحيب ──
-window.showWelcome = function() {
-  const ws = document.getElementById('welcomeScreen');
-  if (!ws) return;
-  ws.style.display = 'flex';
-  ws.classList.remove('hide');
-  // إعادة تشغيل الأنيميشن
-  ws.style.animation = 'none';
-  ws.offsetHeight; // reflow
-  ws.style.animation = '';
-};
-
-// ── شاشة الترحيب: أبحث عن LPP / أملك LPP / عرض كل الأنواع ──
-window.chooseOp = function(op) {
-  const ws = document.getElementById('welcomeScreen');
-  const closeWelcome = () => {
-    if (!ws) return;
-    ws.classList.add('hide');
-    setTimeout(() => { ws.style.display = 'none'; }, 400);
-  };
-
-  if (op === 'all') {
-    homeShowAll = true;
-    fTypes = new Set(['aadl','social','lpp','lsp','villa','maison','appart','residence','local']);
-    closeWelcome();
-    applyFilters();
-  } else if (op === 'owner') {
-    closeWelcome();
-    setTimeout(() => openOwnerPost(), 420);
-  } else {
-    // op === 'search' → تصفح شقق LPP (الوضع الافتراضي أصلاً على الصفحة الرئيسية)
-    closeWelcome();
-    applyFilters();
-  }
-};
-
-// ── فتح نموذج نشر إعلان مع تعبئة النوع تلقائياً بـ LPP ──
-window.openOwnerPost = function() {
-  openPost();
-  presetPostType('lpp');
-};
-
-function presetPostType(type) {
-  const ptSelect = document.getElementById('pt');
-  if (ptSelect) ptSelect.value = type;
-}
-
-// ── تمرير سلس نحو شبكة "أحدث شقق LPP" ──
-window.scrollToHomeGrid = function() {
-  const grid = document.getElementById('homeGrid');
-  if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
-};
-
-// ── فلاتر سريعة (الغرف / المعاملة) في الصفحة الرئيسية ──
-window.qfSet = function(kind, val, btnEl) {
-  if (kind === 'rooms') fRooms = val;
-  if (kind === 'op') fOp = val;
-  // مزامنة شكل الأزرار (active) داخل نفس المجموعة فقط
-  if (btnEl) {
-    const group = btnEl.closest('.qf-row');
-    if (group) group.querySelectorAll('.qf-chip').forEach(b => b.classList.remove('active'));
-    btnEl.classList.add('active');
-  }
-  applyFilters();
-};
-
-window.qfSetCommune = function(val) {
-  fCommune = val;
-  applyFilters();
-};
-
-window.openFilterDrawer = function() {
-  document.getElementById('filterDrawer').classList.add('open');
-  document.getElementById('filterOverlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
-};
-window.closeFilterDrawer = function() {
-  document.getElementById('filterDrawer').classList.remove('open');
-  document.getElementById('filterOverlay').classList.remove('open');
-  document.body.style.overflow = '';
-};
-window.syncMobFilter = function(type, val) {
-  if (type === 'commune') {
-    fCommune = val;
-    const mainSel = document.getElementById('fcm');
-    if (mainSel) mainSel.value = val;
-    applyFilters();
-  }
-};
-window.applyMobFilters = function() {
-  fCommune = document.getElementById('fcmMob').value;
-  priceMin = parseFloat(document.getElementById('pminMob').value) || 0;
-  priceMax = parseFloat(document.getElementById('pmaxMob').value) || Infinity;
-  // مزامنة Sidebar
-  const mainSel = document.getElementById('fcm');
-  if (mainSel) mainSel.value = fCommune;
-  const pminEl = document.getElementById('pmin');
-  const pmaxEl = document.getElementById('pmax');
-  if (pminEl) pminEl.value = document.getElementById('pminMob').value;
-  if (pmaxEl) pmaxEl.value = document.getElementById('pmaxMob').value;
-  applyFilters();
-  closeFilterDrawer();
-};
-
-// Populate select options
-function initSelects() {
-  const ptSelect = document.getElementById('pt');
-  const poSelect = document.getElementById('po');
-  Object.keys(PT).forEach(t => {
-    const opt = document.createElement('option');
-    opt.value = t;
-    opt.dataset.val = t;
-    opt.innerText = PT[t];
-    ptSelect.appendChild(opt);
-  });
-  Object.keys(OP).forEach(o => {
-    const opt = document.createElement('option');
-    opt.value = o;
-    opt.dataset.val = o;
-    opt.innerText = OP[o];
-    poSelect.appendChild(opt);
-  });
-  // الموقع مخصص لـ LPP: نوع العقار الافتراضي في نموذج النشر
-  if (ptSelect.querySelector('option[value="lpp"]')) ptSelect.value = 'lpp';
-}
-
-// Firebase listener
+// ══════════════════════════════════════════════════════
+// Firebase: الاستماع للإعلانات
+// ══════════════════════════════════════════════════════
 let deepLinkDone = false;
 function openAdFromHash() {
   if (deepLinkDone) return;
   const m = /^#ad-([A-Za-z0-9_-]+)$/.exec(location.hash || '');
   if (!m) { deepLinkDone = true; return; }
-  if (DATA.some(x => String(x.id) === m[1]) && window.openD) { deepLinkDone = true; window.openD(m[1]); }
+  if (DATA.some(x => String(x.id) === m[1])) { deepLinkDone = true; window.openD(m[1]); }
 }
-
 function startFirebaseListener() {
   if (PAGE_MODE === 'home') renderHomeLoading();
-  const fullQuery = query(adsCol, orderBy("createdAt", "desc"));
-
-  const handle = (snapshot) => {
-    DATA = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    dataLoaded = true;
-    dataLoadError = false;
-    const liveCountEl = document.getElementById('liveAdCount');
-    if (liveCountEl) liveCountEl.innerText = DATA.length;
-    applyFilters();
-    openAdFromHash();
+  const full = query(adsCol, orderBy('createdAt', 'desc'));
+  const handle = snap => {
+    DATA = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    dataLoaded = true; dataLoadError = false;
+    applyFilters(); openAdFromHash();
   };
-  const onError = (error) => {
-    console.error("Firebase error:", error);
-    if (dataLoaded) return; // لدينا بيانات معروضة، لا نُزعج الزائر
+  const onError = err => {
+    console.error('Firebase error:', err);
+    if (dataLoaded) return;
     dataLoadError = true;
-    toast(LANG[currentLang].toastDbErr, "red");
-    if (PAGE_MODE === 'home') renderHomeError();
+    toast(t('⚠️ تعذّر الاتصال بقاعدة البيانات', '⚠️ Connexion à la base impossible'), 'red');
+    if (PAGE_MODE === 'home') renderHomeError(); else renderAds([]);
   };
-
-  if (PAGE_MODE !== 'home') {
-    onSnapshot(fullQuery, handle, onError);
-    return;
-  }
-
-  // الصفحة الرئيسية: أحدث 30 إعلاناً أولاً لظهور سريع، ثم كل الإعلانات (الخريطة تعرضها كلها)
-  let fullLoaded = false;
-  let fullStarted = false;
+  if (PAGE_MODE !== 'home') { onSnapshot(full, handle, onError); return; }
+  // الرئيسية: أحدث 30 إعلاناً لظهور سريع ثم الكل للخريطة
+  let fullStarted = false, fullLoaded = false;
   const startFull = () => {
-    if (fullStarted) return;
-    fullStarted = true;
-    onSnapshot(fullQuery, (snap) => { fullLoaded = true; unsubFast(); handle(snap); }, onError);
+    if (fullStarted) return; fullStarted = true;
+    onSnapshot(full, snap => { fullLoaded = true; unsubFast(); handle(snap); }, onError);
   };
-  const unsubFast = onSnapshot(
-    query(adsCol, orderBy("createdAt", "desc"), limit(30)),
-    (snap) => { if (!fullLoaded) handle(snap); startFull(); },
-    (err) => { onError(err); startFull(); }
-  );
+  const unsubFast = onSnapshot(query(adsCol, orderBy('createdAt', 'desc'), limit(30)),
+    snap => { if (!fullLoaded) handle(snap); startFull(); },
+    err => { onError(err); startFull(); });
 }
 
-// ── Bilingual translations ──────────────────────────────────────────────────
-const LANG = {
-  ar: {
-    dir: 'rtl', htmlLang: 'ar',
-    heroTitle: 'خريطة شقق <span>LPP</span> بالجزائر العاصمة',
-    heroSub: 'موقع مخصص لسكنات LPP فقط — بيع وكراء',
-    ctaSeeLpp: '🔍 عرض شقق LPP', ctaOwnLpp: '🔑 أملك شقة LPP',
-    wlcQ: 'هل تبحث عن LPP أم تملك واحدة؟',
-    wlcSearchLabel: 'أبحث عن LPP', wlcOwnerLabel: 'أملك LPP', wlcAllBtn: 'عرض كل أنواع العقارات ←',
-    qfRoomsLabel: '🛏️ الغرف:', qfOpLabel: '🤝 المعاملة:', qfCommuneLabel: '📍 البلدية:',
-    qfVente: 'بيع', qfLocation: 'كراء',
-    ownerTitle: 'هل تملك شقة LPP؟',
-    ownerDesc: 'دارنا تساعدك على تصوير عقارك، نشره، والترويج له للوصول إلى مشترين أو مستأجرين جادين — مجاناً وبدون تسجيل.',
-    ownerCta: '＋ انشر عقارك الآن',
-    otherPropsText: '🏘️ تبحث عن نوع آخر؟ AADL، فيلا، منزل، محل تجاري، ريزيدونس...',
-    otherPropsLink: 'تصفح كل الأنواع ←',
-    searchPlaceholder: 'ابحث بالحي أو البلدية...',
-    searchBtn: '🔍 بحث',
-    tabAds: 'الإعلانات', tabPrices: 'الأسعار', tabArticles: 'المقالات', tabLegal: 'النصائح القانونية',
-    statAds: 'إعلان نشط', statComm: 'بلدية', statAadl: 'حي LPP', statAlger: 'الجزائر العاصمة',
-    tagVillaHero: '🏛️ فيلا', tagMaisonHero: '🏡 منزل', tagLocalHero: '🛍️ محل', tagResidenceHero: '🏫 ريزيدونس',
-    tagVilla: '🏡 فيلا · منزل', tagLocal: '🛍️ محل · ريزيدنس',
-    fabLabel: 'أضف إعلانك مجاناً',
-    postBtnLabel: 'نشر إعلان', all: 'الكل',
-    mobFilterBtn: '🔍 فلاتر البحث',
-    drawerTitle: '🔍 فلاتر البحث',
-    filterType: '🏷️ نوع العقار', filterOp: '🤝 نوع المعاملة',
-    filterRooms: '🛏️ عدد الغرف', filterCond: '🔧 حالة العقار',
-    filterStatus: '📢 حالة الإعلان', filterComm: '📍 البلدية',
-    filterPrice: '💰 نطاق السعر (دج)',
-    allComm: 'كل البلديات', priceFrom: 'من', priceTo: 'إلى',
-    applyBtn: '✅ تطبيق الفلاتر',
-    sortNew: 'الأحدث أولاً', sortCheap: 'الأرخص أولاً', sortExp: 'الأغلى أولاً',
-    showing: 'عرض', adWord: 'إعلان',
-    callBtn: '📞 اتصل الآن', waBtn: 'WhatsApp',
-    shareLinkLabel: 'نسخ رابط الإعلان',
-    postTitle: '📣 نشر إعلان جديد', postSub: 'مجاني – بدون تسجيل – فوري',
-    fldType: 'نوع العقار', fldOp: 'المعاملة', fldRooms: 'الغرف',
-    fldArea: 'المساحة (م²)', fldAreaPh: 'مثال: 85',
-    fldCond: 'حالة العقار', fldStatus: 'حالة الإعلان',
-    fldLoc: 'البلدية والحي', fldLocPh: 'مثال: سيدي عبد الله – حي 3000 مسكن',
-    fldPrice: 'السعر (دج)', fldPricePh: 'مثال: 40000',
-    fldPhone: 'رقم الهاتف', fldPhonePh: '07XX XX XX XX',
-    fldDesc: 'وصف العقار', fldDescPh: 'الطابق، التوجيه، المرافق، ملاحظات...',
-    submitBtn: '🚀 نشر الإعلان مجاناً',
-    toastPosted: '✅ تم نشر إعلانك بنجاح!',
-    toastFavAdd: '❤️ أضيفت للمفضلة', toastFavRem: 'تمت الإزالة',
-    toastCopied: '📋 تم النسخ!', toastCalling: '📞 جارٍ الاتصال بـ ',
-    toastFillAll: '⚠️ يرجى ملء الحقول الضرورية',
-    toastBadPhone: '⚠️ رقم الهاتف غير صحيح',
-    toastPosting: '⏳ جارٍ النشر...',
-    toastFailed: '❌ فشل النشر',
-    toastDbErr: '⚠️ مشكلة في الاتصال بقاعدة البيانات',
-    specComm: 'البلدية', specRooms: 'الغرف', specArea: 'المساحة',
-    specPrice: 'السعر', specCond: 'الحالة', specDate: 'تاريخ النشر',
-    noAds: 'لا توجد إعلانات', noAdsSub: 'جرّب تغيير معايير البحث',
-    condNeuf: 'جديد', condUsed: 'مستعمل',
-    statDispo: 'متوفر', statReserved: 'محجوز', statSold: 'تم البيع', statRented: 'تم الكراء',
-    footerText: 'منصة متخصصة حصرياً في شقق LPP بالجزائر العاصمة',
-    privacy: 'سياسة الخصوصية', terms: 'شروط الاستخدام',
-    contact: 'اتصل بنا', about: 'حول الموقع',
-    pages: {
-      privacy: {
-        title: '🔒 سياسة الخصوصية',
-        content: `<h3 style="margin-bottom:10px">جمع البيانات</h3>
-          <p>نجمع فقط المعلومات التي تقدمها طوعياً عند نشر إعلان (رقم الهاتف، الموقع، وصف العقار). لا نجمع أي بيانات شخصية أخرى دون موافقتك.</p>
-          <h3 style="margin:14px 0 8px">استخدام البيانات</h3>
-          <p>تُستخدم البيانات حصرياً لعرض إعلانك على المنصة والتواصل بين البائعين والمشترين. لا نبيع أي بيانات لأطراف ثالثة.</p>
-          <h3 style="margin:14px 0 8px">الكوكيز</h3>
-          <p>نستخدم Firebase لإدارة قاعدة البيانات. قد تُخزَّن بعض البيانات محلياً لتحسين تجربة المستخدم.</p>
-          <h3 style="margin:14px 0 8px">حذف البيانات</h3>
-          <p>يمكنك طلب حذف إعلانك في أي وقت عبر التواصل معنا على: <strong>contact@darnaimmo.dz</strong></p>`
-      },
-      terms: {
-        title: '📋 شروط الاستخدام',
-        content: `<h3 style="margin-bottom:10px">شروط النشر</h3>
-          <p>يُسمح فقط بنشر إعلانات عقارية حقيقية تخص الجزائر العاصمة. يُمنع نشر محتوى مضلل أو احتيالي.</p>
-          <h3 style="margin:14px 0 8px">المسؤولية</h3>
-          <p>دارنا إيمو منصة وسيطة فقط ولا تتحمل أي مسؤولية عن صحة المعلومات المنشورة من طرف المستخدمين.</p>
-          <h3 style="margin:14px 0 8px">الإعلانات المحظورة</h3>
-          <p>يُحظر نشر: إعلانات وهمية، أرقام هواتف خاطئة، أسعار مضللة، أو أي محتوى مخالف للقانون الجزائري.</p>
-          <h3 style="margin:14px 0 8px">الحقوق</h3>
-          <p>نحتفظ بحق إزالة أي إعلان يخالف هذه الشروط دون إشعار مسبق.</p>`
-      },
-      contact: {
-        title: '📬 اتصل بنا',
-        content: `<p style="margin-bottom:12px">نحن هنا للمساعدة! تواصل معنا عبر:</p>
-          <p>📧 البريد الإلكتروني: <strong>contact@darnaimmo.dz</strong></p>
-          <p style="margin-top:10px">📘 فيسبوك: <a href="https://www.facebook.com/100090394402814/" target="_blank" style="color:#1877F2">صفحة دارنا إيمو</a></p>
-          <p style="margin-top:10px">⏰ أوقات الرد: الأحد – الخميس، 9:00 – 17:00</p>
-          <p style="margin-top:16px;color:#888;font-size:13px">للإبلاغ عن إعلان مشبوه أو طلب حذف إعلانك، أرسل لنا رسالة مع رابط الإعلان.</p>`
-      },
-      about: {
-        title: 'ℹ️ حول الموقع',
-        content: `<p style="margin-bottom:12px"><strong>دارنا إيمو</strong> منصة عقارية جزائرية مجانية متخصصة في الجزائر العاصمة.</p>
-          <p>تتيح للمواطنين نشر وتصفح إعلانات السكن الاجتماعي (AADL، Social، LPP)، الشقق، الفيلات، المنازل، والمحلات التجارية.</p>
-          <h3 style="margin:14px 0 8px">مميزاتنا</h3>
-          <p>✅ نشر مجاني بدون تسجيل<br>✅ تحديث فوري للإعلانات<br>✅ تواصل مباشر عبر WhatsApp والهاتف<br>✅ فلاتر متقدمة للبحث</p>
-          <p style="margin-top:14px;color:#888;font-size:13px">الإصدار 6.0 · © ${new Date().getFullYear()} Darna Immo · جميع الحقوق محفوظة</p>`
-      }
-    }
-  },
-  fr: {
-    dir: 'rtl', htmlLang: 'fr-DZ',
-    heroTitle: 'La carte des appartements <span>LPP</span> à Alger',
-    heroSub: 'Un site dédié uniquement aux logements LPP — vente et location',
-    ctaSeeLpp: '🔍 Voir les LPP', ctaOwnLpp: '🔑 J\'ai un LPP',
-    wlcQ: 'Vous cherchez un LPP ou vous en possédez un ?',
-    wlcSearchLabel: 'Je cherche un LPP', wlcOwnerLabel: 'Je possède un LPP', wlcAllBtn: 'Voir tous les types de biens →',
-    qfRoomsLabel: '🛏️ Pièces :', qfOpLabel: '🤝 Transaction :', qfCommuneLabel: '📍 Commune :',
-    qfVente: 'Vente', qfLocation: 'Location',
-    ownerTitle: 'Vous êtes propriétaire d\'un LPP ?',
-    ownerDesc: 'Darna vous aide à photographier, publier et promouvoir votre bien pour toucher des acheteurs ou locataires sérieux — gratuitement, sans inscription.',
-    ownerCta: '＋ Publier mon bien',
-    otherPropsText: '🏘️ Vous cherchez autre chose ? AADL, villa, maison, local, résidence...',
-    otherPropsLink: 'Voir tous les types →',
-    searchPlaceholder: 'Rechercher par quartier ou commune...',
-    searchBtn: '🔍 Chercher',
-    tabAds: 'Annonces', tabPrices: 'Prix', tabArticles: 'Articles', tabLegal: 'Conseils juridiques',
-    statAds: 'annonce active', statComm: 'commune', statAadl: 'quartier LPP', statAlger: 'Alger',
-    tagVillaHero: '🏛️ Villa', tagMaisonHero: '🏡 Maison', tagLocalHero: '🛍️ Local', tagResidenceHero: '🏫 Résidence',
-    tagVilla: '🏡 Villa · Maison', tagLocal: '🛍️ Local · Résidence',
-    fabLabel: 'Publier une annonce',
-    postBtnLabel: 'Publier', all: 'Tous',
-    mobFilterBtn: '🔍 Filtres de recherche',
-    drawerTitle: '🔍 Filtres de recherche',
-    filterType: '🏷️ Type de bien', filterOp: '🤝 Type d\'opération',
-    filterRooms: '🛏️ Nb. de pièces', filterCond: '🔧 État du bien',
-    filterStatus: '📢 Statut annonce', filterComm: '📍 Commune',
-    filterPrice: '💰 Fourchette de prix (DA)',
-    allComm: 'Toutes les communes', priceFrom: 'De', priceTo: 'À',
-    applyBtn: '✅ Appliquer les filtres',
-    sortNew: 'Plus récents', sortCheap: 'Moins chers', sortExp: 'Plus chers',
-    showing: 'Affichage de', adWord: 'annonce(s)',
-    callBtn: '📞 Appeler maintenant', waBtn: 'WhatsApp',
-    shareLinkLabel: 'Copier le lien',
-    postTitle: '📣 Publier une annonce', postSub: 'Gratuit – Sans inscription – Immédiat',
-    fldType: 'Type de bien', fldOp: 'Opération', fldRooms: 'Pièces',
-    fldArea: 'Surface (m²)', fldAreaPh: 'Ex: 85',
-    fldCond: 'État', fldStatus: 'Statut',
-    fldLoc: 'Commune et quartier', fldLocPh: 'Ex: Sidi Abdallah – Cité 3000 logements',
-    fldPrice: 'Prix (DA)', fldPricePh: 'Ex: 40000',
-    fldPhone: 'Téléphone', fldPhonePh: '07XX XX XX XX',
-    fldDesc: 'Description du bien', fldDescPh: 'Étage, orientation, équipements, remarques...',
-    submitBtn: '🚀 Publier gratuitement',
-    toastPosted: '✅ Annonce publiée avec succès!',
-    toastFavAdd: '❤️ Ajouté aux favoris', toastFavRem: 'Retiré des favoris',
-    toastCopied: '📋 Copié!', toastCalling: '📞 Appel en cours vers ',
-    toastFillAll: '⚠️ Veuillez remplir les champs obligatoires',
-    toastBadPhone: '⚠️ Numéro de téléphone invalide',
-    toastPosting: '⏳ Publication en cours...',
-    toastFailed: '❌ Échec de la publication',
-    toastDbErr: '⚠️ Problème de connexion à la base de données',
-    specComm: 'Commune', specRooms: 'Pièces', specArea: 'Surface',
-    specPrice: 'Prix', specCond: 'État', specDate: 'Date de publication',
-    noAds: 'Aucune annonce', noAdsSub: 'Essayez de modifier vos critères de recherche',
-    condNeuf: 'Neuf', condUsed: 'Occasion',
-    statDispo: 'Disponible', statReserved: 'Réservé', statSold: 'Vendu', statRented: 'Loué',
-    footerText: 'La plateforme dédiée exclusivement aux appartements LPP à Alger',
-    privacy: 'Politique de confidentialité', terms: 'Conditions d\'utilisation',
-    contact: 'Nous contacter', about: 'À propos',
-    pages: {
-      privacy: {
-        title: '🔒 Politique de confidentialité',
-        content: `<h3 style="margin-bottom:10px">Collecte des données</h3>
-          <p>Nous collectons uniquement les informations que vous fournissez volontairement lors de la publication d'une annonce (numéro de téléphone, localisation, description). Aucune autre donnée personnelle n'est collectée sans votre consentement.</p>
-          <h3 style="margin:14px 0 8px">Utilisation des données</h3>
-          <p>Les données sont utilisées exclusivement pour afficher votre annonce et faciliter le contact entre vendeurs et acheteurs. Nous ne vendons aucune donnée à des tiers.</p>
-          <h3 style="margin:14px 0 8px">Cookies</h3>
-          <p>Nous utilisons Firebase pour gérer la base de données. Certaines données peuvent être stockées localement pour améliorer l'expérience utilisateur.</p>
-          <h3 style="margin:14px 0 8px">Suppression des données</h3>
-          <p>Vous pouvez demander la suppression de votre annonce à tout moment en nous contactant: <strong>contact@darnaimmo.dz</strong></p>`
-      },
-      terms: {
-        title: '📋 Conditions d\'utilisation',
-        content: `<h3 style="margin-bottom:10px">Conditions de publication</h3>
-          <p>Seules les annonces immobilières réelles concernant la wilaya d'Alger sont autorisées. Tout contenu trompeur ou frauduleux est strictement interdit.</p>
-          <h3 style="margin:14px 0 8px">Responsabilité</h3>
-          <p>Darna Immo est une plateforme intermédiaire et n'est pas responsable de l'exactitude des informations publiées par les utilisateurs.</p>
-          <h3 style="margin:14px 0 8px">Annonces interdites</h3>
-          <p>Il est interdit de publier: des annonces fictives, de faux numéros de téléphone, des prix trompeurs, ou tout contenu contraire à la législation algérienne.</p>
-          <h3 style="margin:14px 0 8px">Droits</h3>
-          <p>Nous nous réservons le droit de supprimer toute annonce ne respectant pas ces conditions sans préavis.</p>`
-      },
-      contact: {
-        title: '📬 Nous contacter',
-        content: `<p style="margin-bottom:12px">Nous sommes là pour vous aider ! Contactez-nous via:</p>
-          <p>📧 Email: <strong>contact@darnaimmo.dz</strong></p>
-          <p style="margin-top:10px">📘 Facebook: <a href="https://www.facebook.com/100090394402814/" target="_blank" style="color:#1877F2">Page Darna Immo</a></p>
-          <p style="margin-top:10px">⏰ Heures de réponse: Dimanche – Jeudi, 9h00 – 17h00</p>
-          <p style="margin-top:16px;color:#888;font-size:13px">Pour signaler une annonce suspecte ou demander la suppression de la vôtre, envoyez-nous un message avec le lien de l'annonce.</p>`
-      },
-      about: {
-        title: 'ℹ️ À propos',
-        content: `<p style="margin-bottom:12px"><strong>Darna Immo</strong> est une plateforme immobilière algérienne gratuite, spécialisée dans la wilaya d'Alger.</p>
-          <p>Elle permet aux citoyens de publier et consulter des annonces pour le logement social (AADL, Social, LPP), appartements, villas, maisons et locaux commerciaux.</p>
-          <h3 style="margin:14px 0 8px">Nos atouts</h3>
-          <p>✅ Publication gratuite sans inscription<br>✅ Mise à jour instantanée<br>✅ Contact direct via WhatsApp et téléphone<br>✅ Filtres de recherche avancés</p>
-          <p style="margin-top:14px;color:#888;font-size:13px">Version 6.0 · © ${new Date().getFullYear()} Darna Immo · Tous droits réservés</p>`
-      }
-    }
-  }
-};
-
-function applyTranslation(lang) {
-  const T = LANG[lang];
-  currentLang = lang;
-  document.documentElement.lang = T.htmlLang || lang; // توحيد lang الفعلي مع اللغة المعروضة فعلياً
-  if (window.DarnaI18n) window.DarnaI18n.apply();
-  if (window.DarnaMap) window.DarnaMap.relabel();
-
-  // ── Hero (قد لا يكون موجوداً في listings.html) ──
-  const heroTitleEl = document.getElementById('heroTitle'); if (heroTitleEl) heroTitleEl.innerHTML = T.heroTitle;
-  const heroSubEl = document.getElementById('heroSub'); if (heroSubEl) heroSubEl.textContent = T.heroSub;
-  const searchQEl = document.getElementById('searchQ'); if (searchQEl) searchQEl.placeholder = T.searchPlaceholder;
-  const searchBtnEl = document.getElementById('searchBtn'); if (searchBtnEl) searchBtnEl.textContent = T.searchBtn;
-
-  // ── أزرار CTA الرئيسية في الهيرو (LPP) ──
-  const ctaSeeLppEl = document.getElementById('ctaSeeLpp'); if (ctaSeeLppEl && T.ctaSeeLpp) ctaSeeLppEl.querySelector('span').textContent = T.ctaSeeLpp.replace(/^[^\s]+\s/, '');
-  const ctaOwnLppEl = document.getElementById('ctaOwnLpp'); if (ctaOwnLppEl && T.ctaOwnLpp) ctaOwnLppEl.querySelector('span').textContent = T.ctaOwnLpp.replace(/^[^\s]+\s/, '');
-
-  // ── شاشة الترحيب ──
-  const wlcQEl = document.getElementById('wlcQ'); if (wlcQEl && T.wlcQ) wlcQEl.textContent = T.wlcQ;
-  const wlcSearchLabelEl = document.getElementById('wlcSearchLabel'); if (wlcSearchLabelEl && T.wlcSearchLabel) wlcSearchLabelEl.textContent = T.wlcSearchLabel;
-  const wlcOwnerLabelEl = document.getElementById('wlcOwnerLabel'); if (wlcOwnerLabelEl && T.wlcOwnerLabel) wlcOwnerLabelEl.textContent = T.wlcOwnerLabel;
-  const wlcAllBtnEl = document.getElementById('wlcAllBtn'); if (wlcAllBtnEl && T.wlcAllBtn) wlcAllBtnEl.textContent = T.wlcAllBtn;
-
-  // ── فلاتر LPP السريعة + قسم الملاك + أنواع أخرى ──
-  const qfRoomsLabelEl = document.getElementById('qfRoomsLabel'); if (qfRoomsLabelEl && T.qfRoomsLabel) qfRoomsLabelEl.textContent = T.qfRoomsLabel;
-  const qfOpLabelEl = document.getElementById('qfOpLabel'); if (qfOpLabelEl && T.qfOpLabel) qfOpLabelEl.textContent = T.qfOpLabel;
-  const qfCommuneLabelEl = document.getElementById('qfCommuneLabel'); if (qfCommuneLabelEl && T.qfCommuneLabel) qfCommuneLabelEl.textContent = T.qfCommuneLabel;
-  const qfVenteEl = document.getElementById('qfVente'); if (qfVenteEl && T.qfVente) qfVenteEl.textContent = T.qfVente;
-  const qfLocationEl = document.getElementById('qfLocation'); if (qfLocationEl && T.qfLocation) qfLocationEl.textContent = T.qfLocation;
-  const ownerTitleEl = document.getElementById('ownerTitle'); if (ownerTitleEl && T.ownerTitle) ownerTitleEl.textContent = T.ownerTitle;
-  const ownerDescEl = document.getElementById('ownerDesc'); if (ownerDescEl && T.ownerDesc) ownerDescEl.textContent = T.ownerDesc;
-  const ownerCtaBtnEl = document.getElementById('ownerCtaBtn'); if (ownerCtaBtnEl && T.ownerCta) ownerCtaBtnEl.querySelector('span').textContent = T.ownerCta.replace(/^[^\s]+\s/, '');
-  const otherPropsTextEl = document.getElementById('otherPropsText'); if (otherPropsTextEl && T.otherPropsText) otherPropsTextEl.textContent = T.otherPropsText;
-  const otherPropsLinkEl = document.getElementById('otherPropsLink'); if (otherPropsLinkEl && T.otherPropsLink) otherPropsLinkEl.textContent = T.otherPropsLink;
-
-  // ── Hero tags ──
-  const tagLPPEl = document.getElementById('tagLPP'); if (tagLPPEl) tagLPPEl.textContent = '🏪 LPP';
-  const tagSocialEl = document.getElementById('tagSocial'); if (tagSocialEl) tagSocialEl.textContent = '🏘️ Social';
-  const tagVilla2El = document.getElementById('tagVilla2'); if (tagVilla2El) tagVilla2El.textContent = T.tagVillaHero;
-  const tagMaisonEl = document.getElementById('tagMaison'); if (tagMaisonEl) tagMaisonEl.textContent = T.tagMaisonHero;
-  const tagLocal2El = document.getElementById('tagLocal2'); if (tagLocal2El) tagLocal2El.textContent = T.tagLocalHero;
-  const tagAADLEl = document.getElementById('tagAADL'); if (tagAADLEl) tagAADLEl.textContent = '🏢 AADL';
-  const tagResidenceEl = document.getElementById('tagResidence'); if (tagResidenceEl) tagResidenceEl.textContent = T.tagResidenceHero;
-
-  // ── Tab labels ──
-  const tabAdsEl = document.getElementById('tabLabelAds'); if (tabAdsEl) tabAdsEl.textContent = T.tabAds;
-  const tabPricesEl = document.getElementById('tabLabelPrices'); if (tabPricesEl) tabPricesEl.textContent = T.tabPrices;
-  const tabArticlesEl = document.getElementById('tabLabelArticles'); if (tabArticlesEl) tabArticlesEl.textContent = T.tabArticles;
-  const tabLegalEl = document.getElementById('tabLabelLegal'); if (tabLegalEl) tabLegalEl.textContent = T.tabLegal;
-  // ── نفس العناوين داخل القائمة المنسدلة للهاتف ──
-  const mmAdsEl = document.getElementById('mmLabelAds'); if (mmAdsEl) mmAdsEl.textContent = T.tabAds;
-  const mmPricesEl = document.getElementById('mmLabelPrices'); if (mmPricesEl) mmPricesEl.textContent = T.tabPrices;
-  const mmArticlesEl = document.getElementById('mmLabelArticles'); if (mmArticlesEl) mmArticlesEl.textContent = T.tabArticles;
-  const mmLegalEl = document.getElementById('mmLabelLegal'); if (mmLegalEl) mmLegalEl.textContent = T.tabLegal;
-  const postBtnMobileLabelEl = document.getElementById('postBtnMobileLabel'); if (postBtnMobileLabelEl) postBtnMobileLabelEl.textContent = T.postBtnLabel;
-
-  // ── Stats ──
-  const statL0El = document.getElementById('statL0'); if (statL0El) statL0El.textContent = T.statAds;
-  const statL1El = document.getElementById('statL1'); if (statL1El) statL1El.textContent = T.statComm;
-  const statL2El = document.getElementById('statL2'); if (statL2El) statL2El.textContent = T.statAadl;
-  const statL3El = document.getElementById('statL3'); if (statL3El) statL3El.textContent = T.statAlger;
-
-  // ── Header post button ──
-  const postBtnSpan = document.querySelector('#postBtn span'); if (postBtnSpan) postBtnSpan.textContent = T.postBtnLabel;
-
-  // ── Lang button ──
-  const langBtnEl = document.getElementById('langBtn'); if (langBtnEl) langBtnEl.textContent = lang === 'ar' ? 'FR' : 'عربي';
-
-  // ── FAB ──
-  const fabLabel = document.getElementById('fabLabel');
-  if (fabLabel) fabLabel.textContent = T.fabLabel;
-
-  // ── Mobile filter button ──
-  const mobFilterBtn = document.getElementById('mobFilterBtn');
-  if (mobFilterBtn) mobFilterBtn.textContent = T.mobFilterBtn;
-
-  // ── Sidebar filter titles ──
-  const sidebarMap = {
-    sidebarFType: T.filterType, sidebarFOp: T.filterOp,
-    sidebarFRooms: T.filterRooms, sidebarFCond: T.filterCond,
-    sidebarFStatus: T.filterStatus, sidebarFComm: T.filterComm,
-    sidebarFPrice: T.filterPrice
-  };
-  Object.entries(sidebarMap).forEach(([id, text]) => {
-    const el = document.getElementById(id);
-    if (el) el.innerHTML = text;
-  });
-
-  // ── Filter drawer title & section titles ──
-  const drawerTitle = document.getElementById('drawerTitle');
-  if (drawerTitle) drawerTitle.textContent = T.drawerTitle;
-  const drawerMap = {
-    drawerFType: T.filterType, drawerFOp: T.filterOp,
-    drawerFRooms: T.filterRooms, drawerFCond: T.filterCond,
-    drawerFStatus: T.filterStatus, drawerFComm: T.filterComm,
-    drawerFPrice: T.filterPrice
-  };
-  Object.entries(drawerMap).forEach(([id, text]) => {
-    const el = document.getElementById(id);
-    if (el) el.innerHTML = text;
-  });
-
-  // ── كل نصوص الـ chips (Sidebar + Drawer + Strip) بدالة واحدة ──
-  syncFilterLabels();
-
-  // ── Sidebar commune + price ──
-  const fcm = document.getElementById('fcm');
-  if (fcm && fcm.options[0]) fcm.options[0].text = T.allComm;
-  const pmin = document.getElementById('pmin'); if (pmin) pmin.placeholder = T.priceFrom;
-  const pmax = document.getElementById('pmax'); if (pmax) pmax.placeholder = T.priceTo;
-  const sidebarApplyBtn = document.getElementById('sidebarApplyBtn');
-  if (sidebarApplyBtn) sidebarApplyBtn.textContent = T.applyBtn;
-
-  // ── Drawer commune + price ──
-  const fcmMob = document.getElementById('fcmMob');
-  if (fcmMob && fcmMob.options[0]) fcmMob.options[0].text = T.allComm;
-  const pminMob = document.getElementById('pminMob'); if (pminMob) pminMob.placeholder = T.priceFrom;
-  const pmaxMob = document.getElementById('pmaxMob'); if (pmaxMob) pmaxMob.placeholder = T.priceTo;
-  const drawerApplyBtn = document.getElementById('drawerApplyBtn');
-  if (drawerApplyBtn) drawerApplyBtn.textContent = T.applyBtn;
-
-  // ── Topbar ──
-  const showingLabelEl = document.getElementById('showingLabel'); if (showingLabelEl) showingLabelEl.textContent = T.showing;
-  const adWordLabelEl = document.getElementById('adWordLabel'); if (adWordLabelEl) adWordLabelEl.textContent = T.adWord;
-  const sortOptNew   = document.getElementById('sortOptNew');
-  const sortOptCheap = document.getElementById('sortOptCheap');
-  const sortOptExp   = document.getElementById('sortOptExp');
-  if (sortOptNew)   sortOptNew.textContent   = T.sortNew;
-  if (sortOptCheap) sortOptCheap.textContent = T.sortCheap;
-  if (sortOptExp)   sortOptExp.textContent   = T.sortExp;
-
-  // ── Post modal ──
-  document.querySelector('.pmhead-title').textContent = T.postTitle;
-  document.querySelector('.pmhead-sub').textContent   = T.postSub;
-  const labels = document.querySelectorAll('.pmbody .fg label');
-  const labelMap = [T.fldType, T.fldOp, T.fldRooms, T.fldArea, T.fldCond, T.fldStatus, T.fldLoc, T.fldPrice, T.fldPhone, T.fldDesc];
-  labels.forEach((el, i) => { if (labelMap[i]) el.textContent = labelMap[i]; });
-  document.querySelectorAll('#pt option').forEach(o => { o.text = lPT(o.value); });
-  document.querySelectorAll('#po option').forEach(o => { o.text = lOP(o.value); });
-  const pcond = document.getElementById('pcond');
-  if (pcond) { pcond.options[0].text = T.condNeuf; pcond.options[1].text = T.condUsed; }
-  const pstat = document.getElementById('pstat');
-  if (pstat) { pstat.options[0].text = T.statDispo; pstat.options[1].text = T.statReserved; pstat.options[2].text = T.statSold; pstat.options[3].text = T.statRented; }
-  const pa = document.getElementById('pa'); if (pa) pa.placeholder = T.fldAreaPh;
-  const pl = document.getElementById('pl'); if (pl) pl.placeholder = T.fldLocPh;
-  const pp = document.getElementById('pp'); if (pp) pp.placeholder = T.fldPricePh;
-  const ph = document.getElementById('ph'); if (ph) ph.placeholder = T.fldPhonePh;
-  const pd = document.getElementById('pd'); if (pd) pd.placeholder = T.fldDescPh;
-  const submitBtn = document.querySelector('.btn-submit');
-  if (submitBtn && !submitBtn.disabled) submitBtn.textContent = T.submitBtn;
-
-  // ── حقل الصورة ──
-  const imgUploadLabel = document.querySelector('#imgUploadArea .img-upload-label');
-  const imgUploadHint  = document.querySelector('#imgUploadArea .img-upload-hint');
-  if (imgUploadLabel) imgUploadLabel.textContent = lang === 'fr' ? 'Appuyez pour choisir une photo' : 'اضغط لاختيار صورة';
-  if (imgUploadHint)  imgUploadHint.textContent  = lang === 'fr' ? 'JPG / PNG – Max 15MB' : 'JPG / PNG – الحجم الأقصى 15MB';
-
-  // ── Detail modal static elements ──
-  const mcall = document.getElementById('mcall');
-  if (mcall) mcall.textContent = T.callBtn;
-  const shareLinkLabel = document.getElementById('shareLinkLabel');
-  if (shareLinkLabel) shareLinkLabel.textContent = T.shareLinkLabel;
-
-  // ── Footer ──
-  const footerTextEl = document.getElementById('footerText'); if (footerTextEl) footerTextEl.textContent = T.footerText;
-  const footLinks = document.querySelectorAll('footer a');
-  const linkKeys = ['privacy','terms','contact','about'];
-  const emojis = ['🔒','📋','📬','ℹ️'];
-  footLinks.forEach((el, i) => {
-    if (linkKeys[i] && T[linkKeys[i]]) el.textContent = `${emojis[i]} ${T[linkKeys[i]]}`;
-  });
-
-  // ── معاينة الصفحة الرئيسية: رابط "تجاوز الإعلانات" وتلميح السحب ──
-  const fr = lang === 'fr';
-  const skipLinkEl = document.getElementById('skipAdsLink');
-  if (skipLinkEl) skipLinkEl.textContent = fr ? 'Passer les annonces et découvrir les prix et conseils ↓' : 'تجاوز الإعلانات واكتشف الأسعار والنصائح ↓';
-  const dragHintEl = document.getElementById('homeDragHint');
-  if (dragHintEl) dragHintEl.textContent = fr ? '← Faites glisser pour voir plus' : 'اسحب لمشاهدة المزيد ←';
-
-  // ── صفحة listings.html: رابط العودة وعنوان الصفحة ──
-  const listingsBackEl = document.getElementById('listingsBack');
-  if (listingsBackEl) listingsBackEl.textContent = fr ? "→ Retour à l'accueil" : '→ العودة للرئيسية';
-  const listingsTitleEl = document.getElementById('listingsTitle');
-  if (listingsTitleEl) listingsTitleEl.textContent = fr ? '🏠 Toutes les annonces' : '🏠 جميع العقارات';
-
-  // ── Re-render ads ──
-  sortAndRender();
-}
-
-window.toggleLang = function() {
-  const newLang = currentLang === 'ar' ? 'fr' : 'ar';
-  applyTranslation(newLang);
-};
-
-// Page modals
-window.openPage = function(page) {
-  const T = LANG[currentLang];
-  const p = T.pages[page];
-  if (p) {
-    document.getElementById('pageTitle').innerHTML = p.title;
-    document.getElementById('pageContent').innerHTML = p.content;
-    document.getElementById('pageModal').classList.add('open');
-  }
-};
-
-window.closePage = function() { document.getElementById('pageModal').classList.remove('open'); };
-
-// ── تبديل التبويبات الرئيسية ──
-window.switchTab = function(name) {
-  const panels = ['ads','prices','articles','legal'];
-  panels.forEach(p => {
-    const panel = document.getElementById('tabPanel-' + p);
-    const btn = document.getElementById('tabbtn-' + p);
-    if (panel) panel.classList.toggle('active', p === name);
-    if (btn) btn.classList.toggle('active', p === name);
-  });
-  // مزامنة القائمة المنسدلة في الهاتف مع التبويب النشط
-  const mmItems = document.querySelectorAll('.mobile-menu-item');
-  mmItems.forEach((el, i) => el.classList.toggle('active', panels[i] === name));
-
-  const activePanel = document.getElementById('tabPanel-' + name);
-  if (activePanel) activePanel.scrollIntoView({behavior:'smooth', block:'start'});
-};
-
-// ── قائمة الهاتف المنسدلة (تحل محل الـ Tabbar الثابت لتقليل الازدحام) ──
-window.toggleMobileMenu = function() {
-  const menu = document.getElementById('mobileMenu');
-  const overlay = document.getElementById('mobileMenuOverlay');
-  if (!menu || !overlay) return;
-  const isOpen = menu.classList.contains('open');
-  menu.classList.toggle('open', !isOpen);
-  overlay.classList.toggle('open', !isOpen);
-};
-window.closeMobileMenu = function() {
-  const menu = document.getElementById('mobileMenu');
-  const overlay = document.getElementById('mobileMenuOverlay');
-  if (menu) menu.classList.remove('open');
-  if (overlay) overlay.classList.remove('open');
-};
-
-// ── (صفحة listings.html فقط) قراءة معايير البحث من رابط URL وتطبيقها ──
-function applyUrlParamsToFilters() {
-  if (PAGE_MODE !== 'listings') return;
-  const params = new URLSearchParams(window.location.search);
-  const type = params.get('type');
-  const transaction = params.get('transaction');
-  const commune = params.get('commune');
-  const search = params.get('search');
-  const rooms = params.get('rooms');
-
-  if (type && PT[type]) {
-    fTypes = new Set([type]);
-  }
-  if (rooms && /^f[1-6]$/.test(rooms)) {
-    fRooms = rooms;
-  }
-  if (transaction) {
-    if (transaction === 'sale') fOp = 'bay3';
-    else if (transaction === 'rent') fOp = 'kira';
-    else if (OP[transaction]) fOp = transaction;
-  }
-  if (commune) {
-    fCommune = decodeURIComponent(commune).replace(/[-_]/g, ' ');
-    const fcm = document.getElementById('fcm'); if (fcm) fcm.value = fCommune;
-    const fcmMob = document.getElementById('fcmMob'); if (fcmMob) fcmMob.value = fCommune;
-  }
-  if (search) {
-    fSearch = decodeURIComponent(search);
-    const searchQ = document.getElementById('searchQ'); if (searchQ) searchQ.value = fSearch;
-  }
-  syncChipUI();
-}
-
-// Initialize everything
-initSelects();
-initFilters();
-applyUrlParamsToFilters();
+// ══════════════════════════════════════════════════════
+// تشغيل
+// ══════════════════════════════════════════════════════
+applyUrlParams();
+applyLang(currentLang);
+if (PAGE_MODE === 'listings') renderAds([]);
 startFirebaseListener();
+window.addEventListener('hashchange', () => { deepLinkDone = false; openAdFromHash(); });
+window.addEventListener('resize', updateHomeArrows);
 
-// الفرنسية (fr-DZ) هي اللغة الافتراضية للموقع — تُطبَّق فوراً دون أي تأخير
-// لتفادي وميض المحتوى بالعربية قبل التبديل (كان يحدث سابقاً بسبب setTimeout)
-applyTranslation('fr');
-
-// ── رفع الصورة ──
-let uploadedImgBase64 = null;
-
-async function compressImage(dataUrl, width, quality) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.src = dataUrl;
-    img.onerror = () => resolve(null);
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const ratio = Math.min(1, width / img.width);
-      canvas.width = img.width * ratio;
-      canvas.height = img.height * ratio;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = 'white';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      resolve(canvas.toDataURL('image/jpeg', quality));
-    };
-  });
-}
-
-async function processAndCompress(originalDataUrl) {
-    const configs = [
-        {quality: 0.75, width: 1280},
-        {quality: 0.6, width: 1280},
-        {quality: 0.5, width: 1280},
-        {quality: 0.5, width: 1024},
-        {quality: 0.5, width: 800}
-    ];
-    for (const config of configs) {
-        const compressed = await compressImage(originalDataUrl, config.width, config.quality);
-        if (compressed && compressed.length < 700000) return compressed;
-    }
-    return null;
-}
-
-window.handleImgUpload = function(input) {
-  const file = input.files[0];
-  if (!file) return;
-  if (file.size > 15 * 1024 * 1024) {
-    toast(currentLang === 'fr' ? '⚠️ Image trop lourde (max 15MB)' : '⚠️ حجم الصورة يتجاوز 15MB', 'red'); return;
-  }
-  const reader = new FileReader();
-  reader.onload = async e => {
-    const compressed = await processAndCompress(e.target.result);
-    if (!compressed) {
-       toast(currentLang === 'fr' ? "Image invalide ou non supportée" : "الصورة غير صالحة أو غير مدعومة", 'red');
-       input.value = '';
-       return;
-    }
-    uploadedImgBase64 = compressed;
-    const preview = document.getElementById('imgPreviewPost');
-    const placeholder = document.getElementById('imgUploadPlaceholder');
-    const removeBtn = document.getElementById('imgRemoveBtn');
-    preview.src = uploadedImgBase64;
-    preview.style.display = 'block';
-    placeholder.style.display = 'none';
-    removeBtn.style.display = 'flex';
-  };
-  reader.readAsDataURL(file);
-};
-
-window.removeImg = function(e) {
-  e.stopPropagation();
-  uploadedImgBase64 = null;
-  document.getElementById('imgFileInput').value = '';
-  document.getElementById('imgPreviewPost').style.display = 'none';
-  document.getElementById('imgUploadPlaceholder').style.display = 'block';
-  document.getElementById('imgRemoveBtn').style.display = 'none';
-};
-
-function resetImgUpload() {
-  uploadedImgBase64 = null;
-  const input = document.getElementById('imgFileInput');
-  if (input) input.value = '';
-  const preview = document.getElementById('imgPreviewPost');
-  if (preview) preview.style.display = 'none';
-  const placeholder = document.getElementById('imgUploadPlaceholder');
-  if (placeholder) placeholder.style.display = 'block';
-  const removeBtn = document.getElementById('imgRemoveBtn');
-  if (removeBtn) removeBtn.style.display = 'none';
-}
-
-// ── Schema ديناميكي لكل إعلان (SEO) ──
-function injectAdSchema(ad) {
-  const old = document.getElementById('dynamic-ad-schema');
-  if (old) old.remove();
-
-  const roomsNum = ad.rooms ? parseInt(ad.rooms.replace('f','')) || null : null;
-
-  const schemaObj = {
-    "@context": "https://schema.org",
-    "@type": "Accommodation",
-    "name": ad.title || `${lPT(ad.type)} ${ad.rooms?.toUpperCase()||''} - ${ad.commune||'الجزائر'}`,
-    "description": ad.desc || `${lPT(ad.type)} ${lOP(ad.op)} في ${ad.commune||'الجزائر العاصمة'}`,
-    "address": {
-      "@type": "PostalAddress",
-      "addressLocality": ad.commune || "Alger",
-      "addressRegion": "Alger",
-      "addressCountry": "DZ"
-    },
-    "offers": {
-      "@type": "Offer",
-      "price": String(ad.price || 0),
-      "priceCurrency": "DZD",
-      "availability": ad.status === 'dispo'
-        ? "https://schema.org/InStock"
-        : "https://schema.org/SoldOut"
-    }
-  };
-
-  if (ad.area) schemaObj.floorSize = { "@type":"QuantitativeValue", "value":String(ad.area), "unitCode":"MTK" };
-  if (roomsNum) schemaObj.numberOfRooms = roomsNum;
-
-  if (ad.op === 'kira') {
-    schemaObj.offers.priceSpecification = {
-      "@type":"UnitPriceSpecification",
-      "price": String(ad.price||0),
-      "priceCurrency":"DZD",
-      "referenceQuantity": { "@type":"QuantitativeValue","value":"1","unitCode":"MON" }
-    };
-  }
-
-  const script = document.createElement('script');
-  script.id = 'dynamic-ad-schema';
-  script.type = 'application/ld+json';
-  script.textContent = JSON.stringify(schemaObj);
-  document.head.appendChild(script);
-}
-
-window.calcEstimate = function() {
-  const area  = parseFloat(document.getElementById('calcArea').value);
-  const price = parseFloat(document.getElementById('calcPriceM').value);
-  const res   = document.getElementById('calcResult');
-  if (!area || !price) {
-    res.innerHTML = '<span style="color:#F0C855">⚠️ أدخل المساحة والسعر للمتر المربع</span>';
-    res.style.display = 'block'; return;
-  }
-  const total   = area * price;
-  const taxFees = total * 0.05;
-  const totalSantime = total * 100;
-  res.innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div>
-        <div style="font-size:11px;color:rgba(255,255,255,.6);margin-bottom:3px">📐 المساحة</div>
-        <div style="font-size:15px;font-weight:700;color:#fff">${area.toLocaleString('fr-DZ')} م²</div>
-      </div>
-      <div>
-        <div style="font-size:11px;color:rgba(255,255,255,.6);margin-bottom:3px">💰 السعر/م²</div>
-        <div style="font-size:15px;font-weight:700;color:#fff">${price.toLocaleString('fr-DZ')} دج</div>
-      </div>
-      <div style="grid-column:1/-1;background:rgba(240,200,85,.15);border-radius:8px;padding:12px">
-        <div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:4px">📋 التقييم الإداري الإجمالي</div>
-        <div style="font-size:20px;font-weight:900;color:#F0C855">${total.toLocaleString('fr-DZ')} دج</div>
-        <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px">${(totalSantime/1e6).toFixed(0)} مليون سنتيم</div>
-      </div>
-      <div style="grid-column:1/-1;background:rgba(206,17,38,.15);border-radius:8px;padding:12px">
-        <div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:4px">📑 رسوم التسجيل التقريبية (5%)</div>
-        <div style="font-size:18px;font-weight:900;color:#FF8A8A">${taxFees.toLocaleString('fr-DZ')} دج</div>
-      </div>
-    </div>
-    <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:10px">⚠️ هذا تقدير إداري أدنى — أسعار السوق الفعلية قد تكون أعلى</div>
-  `;
-  res.style.display = 'block';
-};
-
-// ── PWA: تسجيل Service Worker ──
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('Service Worker registered:', reg.scope))
-      .catch(err => console.error('Service Worker registration failed:', err));
-  });
+  window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(err => console.error('SW registration failed:', err)); });
 }

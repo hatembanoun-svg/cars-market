@@ -1,117 +1,93 @@
-
 <!DOCTYPE html>
-<html lang="fr-DZ" dir="rtl">
+<html lang="ar" dir="rtl">
 <head>
-<!-- Meta Pixel Code -->
-<script>
-!function(f,b,e,v,n,t,s)
-{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window, document,'script',
-'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '1562914335571664');
-fbq('track', 'PageView');
-</script>
-<noscript><img height="1" width="1" style="display:none"
-src="https://www.facebook.com/tr?id=1562914335571664&ev=PageView&noscript=1"
-/></noscript>
-<!-- Schema Markup – SEO Structured Data -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "RealEstateAgent",
-  "name": "Darna Immo — Spécialiste LPP à Alger",
-  "description": "Darna Immo est une plateforme immobilière spécialisée dans les appartements LPP à Alger, avec vente, location et publication de biens, tout en gardant l'accès aux autres catégories immobilières (AADL, social, villa, maison, local, résidence).",
-  "url": "https://darna-immo.netlify.app",
-  "logo": "https://darna-immo.netlify.app/assets/logo.png",
-  "areaServed": {
-    "@type": "City",
-    "name": "الجزائر العاصمة",
-    "alternateName": "Alger"
-  },
-  "address": {
-    "@type": "PostalAddress",
-    "addressCountry": "DZ",
-    "addressLocality": "الجزائر"
-  },
-  "sameAs": ["https://www.facebook.com/100090394402814"]
-}
-</script>
-<!-- End Schema Markup -->
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>Biens immobiliers à Alger | LPP et autres biens – Darna Immo</title>
-<meta name="description" content="Consultez les appartements LPP et les autres biens immobiliers à Alger avec recherche et filtres avancés sur Darna Immo."/>
+<title>كل السيارات للبيع في الجزائر | Cars Market DZ</title>
+<meta name="description" content="تصفح كل إعلانات السيارات في الجزائر مع فلاتر حسب الماركة والولاية والوقود وناقل الحركة والسنة والسعر والكيلومترات."/>
 <meta name="robots" content="index, follow"/>
+<meta property="og:type" content="website"/>
+<meta property="og:site_name" content="Cars Market DZ"/>
+<meta property="og:title" content="كل السيارات للبيع في الجزائر | Cars Market DZ"/>
+<meta property="og:description" content="تصفح كل إعلانات السيارات في الجزائر مع فلاتر حسب الماركة والولاية والوقود وناقل الحركة والسنة والسعر والكيلومترات."/>
+<meta property="og:image" content="https://cars-market0.netlify.app/assets/icon-512.png"/>
 <link rel="manifest" href="manifest.json"/>
-<meta name="theme-color" content="#0D3B2E"/>
+<meta name="theme-color" content="#0369A1"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="دارنا إيمو"/>
-<link rel="apple-touch-icon" href="assets/logo.png"/>
-<link rel="icon" type="image/png" href="assets/logo.png"/>
+<meta name="apple-mobile-web-app-title" content="Cars Market"/>
+<link rel="apple-touch-icon" href="assets/icon-192.png"/>
+<link rel="icon" type="image/png" href="assets/icon-192.png"/>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin/>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin/>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"/>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"/>
 <link rel="stylesheet" href="styles.css"/>
+<link rel="stylesheet" href="cars.css"/>
 </head>
 <body data-mode="listings">
-
 <header>
   <div style="display:flex;gap:8px;align-items:center">
-    <button id="postBtn" onclick="openPost()" style="padding:9px 18px;background:linear-gradient(135deg,var(--gold-bright),var(--gold));color:var(--green);border:none;border-radius:9px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px">＋ <span>نشرإعلان</span></button>
+    <button id="postBtn" class="post-btn" onclick="openPost()">＋ <span data-ar="أضف سيارتك" data-fr="Vendre">أضف سيارتك</span></button>
     <button id="langBtn" class="lang-btn" onclick="toggleLang()">FR</button>
   </div>
   <a class="logo" href="index.html">
-    <div class="logo-text" style="text-align:left"><div class="d1">DARNA IMMOBILIER</div><div class="d2">VOTRE PLATEFORME IMMOBILIÈRE ALGÉRIENNE</div></div>
-    <div class="logo-badge"><img src="assets/logo.png" alt="Darna Immobilier"></div>
+    <div class="logo-text" style="text-align:left"><div class="d1">CARS MARKET</div><div class="d2" data-ar="سوق السيارات · الجزائر" data-fr="VOITURES · ALGÉRIE">سوق السيارات · الجزائر</div></div>
+    <div class="logo-badge"><img src="assets/logo.png" alt="Cars Market DZ"></div>
   </a>
 </header>
 
-<div class="listings-topbar-page">
-  <a href="index.html" class="listings-back" id="listingsBack">→ العودة للرئيسية</a>
-</div>
-<h1 class="listings-title" id="listingsTitle">🏠 جميع العقارات</h1>
+<div class="listings-topbar-page"><a href="index.html" class="listings-back" data-ar="→ العودة للخريطة" data-fr="→ Retour à la carte">→ العودة للخريطة</a></div>
+<h1 class="listings-title" data-ar="🚗 جميع السيارات" data-fr="🚗 Toutes les voitures">🚗 جميع السيارات</h1>
 
-<!-- شريط بحث مبسّط -->
 <section class="hero" style="padding:14px 20px 22px">
   <div class="search-wrap" style="margin-top:0">
-    <button id="searchBtn" onclick="doSearch()">🔍 بحث</button>
-    <input id="searchQ" type="text" placeholder="ابحث بالحي أو البلدية..." onkeyup="if(event.key==='Enter')doSearch()"/>
+    <button id="searchBtn" onclick="doSearch()" data-ar="🔍 بحث" data-fr="🔍 Chercher">🔍 بحث</button>
+    <input id="searchQ" type="text" placeholder="ابحث: ماركة، موديل، ولاية..." onkeyup="if(event.key==='Enter')doSearch()"/>
   </div>
 </section>
 
 <!-- Filter Drawer (mobile) -->
 <div class="filter-drawer-overlay" id="filterOverlay" onclick="closeFilterDrawer()"></div>
 <div class="filter-drawer" id="filterDrawer">
-  <div class="filter-drawer-head">
-    <h3 id="drawerTitle">🔍 فلاتر البحث</h3>
-    <button class="filter-drawer-close" onclick="closeFilterDrawer()">✕</button>
-  </div>
-  <div class="fcard"><div class="ftitle" id="drawerFType">🏷️ نوع العقار</div><div class="chips" id="typeChipsMob"></div></div>
-  <div class="fcard"><div class="ftitle" id="drawerFOp">🤝 نوع المعاملة</div><div class="chips" id="opChipsMob"></div></div>
-  <div class="fcard"><div class="ftitle" id="drawerFRooms">🛏️ عدد الغرف</div><div class="chips" id="roomChipsMob"></div></div>
-  <div class="fcard"><div class="ftitle" id="drawerFCond">🔧 حالة العقار</div><div class="chips" id="conditionChipsMob"></div></div>
-  <div class="fcard"><div class="ftitle" id="drawerFStatus">📢 حالة الإعلان</div><div class="chips" id="statusChipsMob"></div></div>
-  <div class="fcard"><div class="ftitle" id="drawerFComm">📍 البلدية</div><select class="fsel" id="fcmMob" onchange="syncMobFilter('commune',this.value)"><option value="">كل البلديات</option><option>سيدي عبد الله</option><option>الرغاية</option><option>أولاد فايت</option><option>الدار البيضاء</option><option>حسين داي</option><option>باب الزوار</option><option>برج البحري</option><option>القبة</option><option>بئر مراد رايس</option><option>الحراش</option><option>بوزريعة</option><option>شراقة</option><option>الأبيار</option><option>بن عكنون</option><option>زرالدة</option></select></div>
-  <div class="fcard"><div class="ftitle" id="drawerFPrice">💰 نطاق السعر (دج)</div><div class="prange"><input id="pminMob" type="number" placeholder="من"/><span>–</span><input id="pmaxMob" type="number" placeholder="إلى"/></div><button class="btn-apply" id="drawerApplyBtn" onclick="applyMobFilters()">✅ تطبيق الفلاتر</button></div>
+  <div class="filter-drawer-head"><h3 data-ar="🔍 فلاتر البحث" data-fr="🔍 Filtres">🔍 فلاتر البحث</h3><button class="filter-drawer-close" onclick="closeFilterDrawer()" aria-label="close">✕</button></div>
+<div class="fcard"><div class="ftitle" data-ar="🚗 الماركة" data-fr="🚗 Marque">🚗 الماركة</div><select class="fsel" data-f="brand"></select></div>
+<div class="fcard"><div class="ftitle" data-ar="📍 الولاية" data-fr="📍 Wilaya">📍 الولاية</div><select class="fsel" data-f="wilaya"></select></div>
+<div class="fcard"><div class="ftitle" data-ar="⛽ الوقود" data-fr="⛽ Carburant">⛽ الوقود</div><div class="chips" data-chips="fuel" data-cls="chip"></div></div>
+<div class="fcard"><div class="ftitle" data-ar="⚙️ ناقل الحركة" data-fr="⚙️ Boîte">⚙️ ناقل الحركة</div><div class="chips" data-chips="gear" data-cls="chip"></div></div>
+<div class="fcard"><div class="ftitle" data-ar="🧑‍💼 البائع" data-fr="🧑‍💼 Vendeur">🧑‍💼 البائع</div><div class="chips" data-chips="seller" data-cls="chip"></div></div>
+<div class="fcard"><div class="ftitle" data-ar="📅 سنة الصنع" data-fr="📅 Année">📅 سنة الصنع</div><select class="fsel" data-f="ymin"></select></div>
+<div class="fcard"><div class="ftitle" data-ar="💰 السعر (دج)" data-fr="💰 Prix (DA)">💰 السعر (دج)</div><div class="prange"><input data-f="pmin" type="number" inputmode="numeric" data-ar-ph="من" data-fr-ph="Min" placeholder="من"/><span>–</span><input data-f="pmax" type="number" inputmode="numeric" data-ar-ph="إلى" data-fr-ph="Max" placeholder="إلى"/></div></div>
+<div class="fcard"><div class="ftitle" data-ar="🛣️ أقصى كيلومترات" data-fr="🛣️ Km maximum">🛣️ أقصى كيلومترات</div><div class="prange"><input data-f="kmax" type="number" inputmode="numeric" data-ar-ph="مثال: 150000" data-fr-ph="ex : 150000" placeholder="مثال: 150000"/></div></div>
+<button type="button" class="btn-reset" onclick="resetFilters()" data-ar="↺ مسح الفلاتر" data-fr="↺ Réinitialiser">↺ مسح الفلاتر</button>
+  <button type="button" class="btn-submit" onclick="closeFilterDrawer()" data-ar="عرض النتائج" data-fr="Voir les résultats">عرض النتائج</button>
 </div>
 
 <div class="main">
   <aside class="sidebar">
-    <div class="fcard"><div class="ftitle" id="sidebarFType">🏷️ نوع العقار</div><div class="chips" id="typeChips"></div></div>
-    <div class="fcard"><div class="ftitle" id="sidebarFOp">🤝 نوع المعاملة</div><div class="chips" id="opChips"></div></div>
-    <div class="fcard"><div class="ftitle" id="sidebarFRooms">🛏️ عدد الغرف</div><div class="chips" id="roomChips"></div></div>
-    <div class="fcard"><div class="ftitle" id="sidebarFCond">🔧 حالة العقار</div><div class="chips" id="conditionChips"></div></div>
-    <div class="fcard"><div class="ftitle" id="sidebarFStatus">📢 حالة الإعلان</div><div class="chips" id="statusChips"></div></div>
-    <div class="fcard"><div class="ftitle" id="sidebarFComm">📍 البلدية</div><select class="fsel" id="fcm" onchange="af()"><option value="">كل البلديات</option><option>سيدي عبد الله</option><option>الرغاية</option><option>أولاد فايت</option><option>الدار البيضاء</option><option>حسين داي</option><option>باب الزوار</option><option>برج البحري</option><option>القبة</option><option>بئر مراد رايس</option><option>الحراش</option><option>بوزريعة</option><option>شراقة</option><option>الأبيار</option><option>بن عكنون</option><option>زرالدة</option></select></div>
-    <div class="fcard"><div class="ftitle" id="sidebarFPrice">💰 نطاق السعر (دج)</div><div class="prange"><input id="pmin" type="number" placeholder="من"/><span>–</span><input id="pmax" type="number" placeholder="إلى"/></div><button class="btn-apply" id="sidebarApplyBtn" onclick="af()">✅ تطبيق الفلاتر</button></div>
+<div class="fcard"><div class="ftitle" data-ar="🚗 الماركة" data-fr="🚗 Marque">🚗 الماركة</div><select class="fsel" data-f="brand"></select></div>
+<div class="fcard"><div class="ftitle" data-ar="📍 الولاية" data-fr="📍 Wilaya">📍 الولاية</div><select class="fsel" data-f="wilaya"></select></div>
+<div class="fcard"><div class="ftitle" data-ar="⛽ الوقود" data-fr="⛽ Carburant">⛽ الوقود</div><div class="chips" data-chips="fuel" data-cls="chip"></div></div>
+<div class="fcard"><div class="ftitle" data-ar="⚙️ ناقل الحركة" data-fr="⚙️ Boîte">⚙️ ناقل الحركة</div><div class="chips" data-chips="gear" data-cls="chip"></div></div>
+<div class="fcard"><div class="ftitle" data-ar="🧑‍💼 البائع" data-fr="🧑‍💼 Vendeur">🧑‍💼 البائع</div><div class="chips" data-chips="seller" data-cls="chip"></div></div>
+<div class="fcard"><div class="ftitle" data-ar="📅 سنة الصنع" data-fr="📅 Année">📅 سنة الصنع</div><select class="fsel" data-f="ymin"></select></div>
+<div class="fcard"><div class="ftitle" data-ar="💰 السعر (دج)" data-fr="💰 Prix (DA)">💰 السعر (دج)</div><div class="prange"><input data-f="pmin" type="number" inputmode="numeric" data-ar-ph="من" data-fr-ph="Min" placeholder="من"/><span>–</span><input data-f="pmax" type="number" inputmode="numeric" data-ar-ph="إلى" data-fr-ph="Max" placeholder="إلى"/></div></div>
+<div class="fcard"><div class="ftitle" data-ar="🛣️ أقصى كيلومترات" data-fr="🛣️ Km maximum">🛣️ أقصى كيلومترات</div><div class="prange"><input data-f="kmax" type="number" inputmode="numeric" data-ar-ph="مثال: 150000" data-fr-ph="ex : 150000" placeholder="مثال: 150000"/></div></div>
+<button type="button" class="btn-reset" onclick="resetFilters()" data-ar="↺ مسح الفلاتر" data-fr="↺ Réinitialiser">↺ مسح الفلاتر</button>
   </aside>
   <div class="content">
-    <button class="mob-filter-btn" id="mobFilterBtn" onclick="openFilterDrawer()">🔍 فلاتر البحث</button>
-    <div class="mob-strip" id="mobStrip"></div>
-    <div class="topbar"><div class="rcount"><span class="live-dot"></span><span id="showingLabel">عرض</span> <strong id="rn">0</strong> <span id="adWordLabel">إعلان</span></div><select class="sortsel" id="srt" onchange="sl()"><option value="new" id="sortOptNew">الأحدث أولاً</option><option value="pa" id="sortOptCheap">الأرخص أولاً</option><option value="pd" id="sortOptExp">الأغلى أولاً</option></select></div>
+    <button class="mob-filter-btn" id="mobFilterBtn" onclick="openFilterDrawer()" data-ar="🔍 فلاتر البحث" data-fr="🔍 Filtres">🔍 فلاتر البحث</button>
+    <div class="topbar">
+      <div class="rcount"><span class="live-dot"></span><span data-ar="عرض" data-fr="Affichage">عرض</span> <strong id="rn">0</strong> <span data-ar="إعلان" data-fr="annonces">إعلان</span></div>
+      <select id="srt" class="fsel" style="width:auto" onchange="sl()">
+        <option value="new" data-ar="الأحدث" data-fr="Plus récentes">الأحدث</option>
+        <option value="pa" data-ar="السعر: الأقل" data-fr="Prix croissant">السعر: الأقل</option>
+        <option value="pd" data-ar="السعر: الأعلى" data-fr="Prix décroissant">السعر: الأعلى</option>
+        <option value="ya" data-ar="الأحدث صنعاً" data-fr="Année récente">الأحدث صنعاً</option>
+        <option value="km" data-ar="الأقل كيلومترات" data-fr="Moins de km">الأقل كيلومترات</option>
+      </select>
+    </div>
     <div class="grid" id="grid"></div>
   </div>
 </div>
@@ -121,8 +97,9 @@ src="https://www.facebook.com/tr?id=1562914335571664&ev=PageView&noscript=1"
   <div class="modal">
     <div class="modal-top">
       <div class="mimg" id="mimg"></div>
-      <button class="mclose" onclick="cm('dm')">✕</button>
+      <button class="mclose" onclick="cm('dm')" aria-label="close">✕</button>
       <div id="mviewsBadge" style="position:absolute;top:12px;right:12px;background:rgba(0,0,0,.5);color:#fff;border-radius:50px;padding:4px 10px;font-size:12px;display:flex;align-items:center;gap:4px">👁️ <span id="mviewsNum">0</span></div>
+      <div class="mthumbs" id="mthumbs"></div>
     </div>
     <div class="mbody">
       <div class="mtitle" id="mtt"></div>
@@ -131,56 +108,54 @@ src="https://www.facebook.com/tr?id=1562914335571664&ev=PageView&noscript=1"
       </div>
       <p class="mdesc" id="mds"></p>
       <div class="mspecs" id="msp"></div>
-
-      <!-- Share link button -->
       <div style="margin-bottom:14px">
         <button class="share-link-btn" id="shareLinkBtn" onclick="copyAdLink()">🔗 <span id="shareLinkLabel">نسخ رابط الإعلان</span></button>
       </div>
-
       <div class="social-buttons" id="socialBtns"></div>
-
       <div class="macts">
         <button class="mact green" id="mcall">📞 اتصل الآن</button>
-        <button class="mact gold" id="mwa">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.122 1.532 5.858L.054 23.447a.75.75 0 00.922.922l5.589-1.478A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg>
-          WhatsApp
-        </button>
+        <button class="mact gold" id="mwa"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.122 1.532 5.858L.054 23.447a.75.75 0 00.922.922l5.589-1.478A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg> WhatsApp</button>
       </div>
-
-
     </div>
   </div>
 </div>
-
 <!-- Post Modal -->
-<div class="overlay" id="pm" onclick="cov(event,'pm')"><div class="modal pmodal"><div class="pmhead"><div class="pmhead-title">📣 نشر إعلان جديد</div><div class="pmhead-sub">مجاني – بدون تسجيل – فوري</div><button class="pmclose" onclick="cm('pm')">✕</button></div><div class="pmbody"><div class="fg-row"><div class="fg"><label>نوع العقار</label><select id="pt"></select></div><div class="fg"><label>المعاملة</label><select id="po"></select></div></div><div class="fg-row"><div class="fg"><label>الغرف</label><select id="pr"><option value="f1">F1</option><option value="f2">F2</option><option value="f3">F3</option><option value="f4">F4</option><option value="f5">F5</option><option value="f6">F6+</option></select></div><div class="fg"><label>المساحة (م²)</label><input id="pa" type="number" placeholder="مثال: 85"/></div></div><div class="fg-row"><div class="fg"><label>حالة العقار</label><select id="pcond"><option value="neuf">جديد</option><option value="utilise">مستعمل</option></select></div><div class="fg"><label>حالة الإعلان</label><select id="pstat"><option value="dispo">متوفر</option><option value="reserved">محجوز</option><option value="sold">تم البيع</option><option value="rented">تم الكراء</option></select></div></div><div class="fg"><label>البلدية والحي</label><select id="pcom" style="margin-bottom:8px"></select><input id="pl" type="text" placeholder="مثال: سيدي عبد الله – حي 3000 مسكن"/></div><div class="fg-row"><div class="fg"><label>السعر (دج)</label><input id="pp" type="number" placeholder="مثال: 40000"/></div><div class="fg"><label>رقم الهاتف</label><input id="ph" type="tel" placeholder="07XX XX XX XX"/></div></div><div class="fg"><label>وصف العقار</label><textarea id="pd" rows="4" placeholder="الطابق، التوجيه، المرافق، ملاحظات..."></textarea>
-</div>
-<div class="fg">
-  <label>📷 صورة العقار (اختياري — صورة واحدة)</label>
-  <div class="img-upload-area" id="imgUploadArea" onclick="document.getElementById('imgFileInput').click()">
-    <img class="img-preview" id="imgPreviewPost" src="" alt=""/>
-    <button class="img-remove-btn" id="imgRemoveBtn" onclick="removeImg(event)">✕</button>
-    <div id="imgUploadPlaceholder">
-      <div class="img-upload-icon">📷</div>
-      <div class="img-upload-label">اضغط لاختيار صورة</div>
-      <div class="img-upload-hint">JPG / PNG – الحجم الأقصى 2MB</div>
+<div class="overlay" id="pm" onclick="cov(event,'pm')"><div class="modal pmodal">
+  <div class="pmhead"><div class="pmhead-title" data-ar="📣 أضف سيارتك" data-fr="📣 Publier une voiture">📣 أضف سيارتك</div><div class="pmhead-sub" data-ar="مجاني – بدون تسجيل – فوري" data-fr="Gratuit – sans inscription – immédiat">مجاني – بدون تسجيل – فوري</div><button class="pmclose" onclick="cm('pm')" aria-label="close">✕</button></div>
+  <div class="pmbody">
+    <div class="fg-row"><div class="fg"><label data-ar="الماركة" data-fr="Marque">الماركة</label><select id="pbrand"></select></div><div class="fg"><label data-ar="الموديل" data-fr="Modèle">الموديل</label><input id="pmodel" type="text" maxlength="40" data-ar-ph="مثال: Clio 4" data-fr-ph="ex : Clio 4" placeholder="مثال: Clio 4"/></div></div>
+    <div class="fg-row"><div class="fg"><label data-ar="سنة الصنع" data-fr="Année">سنة الصنع</label><select id="pyear"></select></div><div class="fg"><label data-ar="الكيلومترات" data-fr="Kilométrage">الكيلومترات</label><input id="pkm" type="number" inputmode="numeric" min="0" max="2000000" data-ar-ph="مثال: 120000" data-fr-ph="ex : 120000" placeholder="مثال: 120000"/></div></div>
+    <div class="fg-row"><div class="fg"><label data-ar="الوقود" data-fr="Carburant">الوقود</label><select id="pfuel"></select></div><div class="fg"><label data-ar="ناقل الحركة" data-fr="Boîte">ناقل الحركة</label><select id="pgear"></select></div></div>
+    <div class="fg-row"><div class="fg"><label data-ar="الولاية" data-fr="Wilaya">الولاية</label><select id="pwil"></select></div><div class="fg"><label data-ar="البائع" data-fr="Vendeur">البائع</label><select id="pseller"></select></div></div>
+    <div class="fg-row"><div class="fg"><label data-ar="السعر (دج)" data-fr="Prix (DA)">السعر (دج)</label><input id="pp" type="number" inputmode="numeric" min="0" data-ar-ph="مثال: 2500000" data-fr-ph="ex : 2500000" placeholder="مثال: 2500000"/></div><div class="fg"><label data-ar="رقم الهاتف" data-fr="Téléphone">رقم الهاتف</label><input id="ph" type="tel" placeholder="07XX XX XX XX"/></div></div>
+    <div class="fg"><label data-ar="وصف السيارة (اختياري)" data-fr="Description (facultatif)">وصف السيارة (اختياري)</label><textarea id="pd" rows="3" maxlength="1500" data-ar-ph="الحالة، الصيانة، الخيارات، الأوراق..." data-fr-ph="État, entretien, options, papiers…" placeholder="الحالة، الصيانة، الخيارات، الأوراق..."></textarea></div>
+    <div class="fg"><label data-ar="📷 صور السيارة (حتى 4 صور)" data-fr="📷 Photos (jusqu'à 4)">📷 صور السيارة (حتى 4 صور)</label>
+      <div class="photo-row"><div id="postThumbs" class="photo-thumbs"></div><label id="imgAddBtn" class="photo-add" for="imgFileInput"><span data-ar="＋ إضافة صور" data-fr="＋ Ajouter">＋ إضافة صور</span></label><input id="imgFileInput" type="file" multiple accept="image/jpeg,image/png,image/webp" hidden onchange="handleImgUpload(this)"/></div>
     </div>
+    <div class="feat-note"><b data-ar="⭐ تريد ظهوراً أكبر؟" data-fr="⭐ Plus de visibilité ?">⭐ تريد ظهوراً أكبر؟</b> <span data-ar="بعد النشر يمكنك تمييز إعلانك: 7 أيام في أعلى القائمة مقابل 500 دج." data-fr="Après la publication, mettez votre annonce en avant : 7 jours en haut de la liste pour 500 DA.">بعد النشر يمكنك تمييز إعلانك: 7 أيام في أعلى القائمة مقابل 500 دج.</span></div>
+    <button class="btn-submit" onclick="sub()" data-ar="🚀 نشر الإعلان مجاناً" data-fr="🚀 Publier gratuitement">🚀 نشر الإعلان مجاناً</button>
   </div>
-  <input type="file" id="imgFileInput" accept="image/jpeg,image/png,image/webp" onchange="handleImgUpload(this)"/>
-</div>
-<button class="btn-submit" onclick="sub()">🚀 نشر الإعلان مجاناً</button></div></div></div>
+</div></div>
 
+<!-- بعد النشر: عرض الإعلان المميز -->
+<div class="overlay" id="featPrompt" onclick="cov(event,'featPrompt')"><div class="modal" style="max-width:420px">
+  <div class="mbody feat-prompt">
+    <div style="font-size:46px">✅</div>
+    <h3 data-ar="تم نشر إعلانك!" data-fr="Annonce publiée !">تم نشر إعلانك!</h3>
+    <p data-ar="هل تريد أن يظهر إعلانك في أعلى القائمة وعلى الخريطة بتمييز خاص؟" data-fr="Voulez-vous placer votre annonce en haut de la liste, avec un badge sponsorisé ?">هل تريد أن يظهر إعلانك في أعلى القائمة وعلى الخريطة بتمييز خاص؟</p>
+    <div class="feat-price">⭐ <span data-ar="7 أيام في الأعلى" data-fr="7 jours en haut">7 أيام في الأعلى</span> = <b>500 DA</b></div>
+    <div class="feat-id"><span data-ar="رقم إعلانك:" data-fr="N° de votre annonce :">رقم إعلانك:</span> <code id="featAdId"></code></div>
+    <button class="btn-submit" id="featGo" type="button" data-ar="⭐ ميّز إعلاني عبر واتساب" data-fr="⭐ Sponsoriser via WhatsApp">⭐ ميّز إعلاني عبر واتساب</button>
+    <button class="feat-later" type="button" onclick="cm('featPrompt')" data-ar="لاحقاً" data-fr="Plus tard">لاحقاً</button>
+  </div>
+</div></div>
+<footer><strong>CARS MARKET DZ</strong> · <span data-ar="سوق السيارات في الجزائر — إعلانات مجانية لبيع وشراء السيارات" data-fr="Le marché de l'automobile en Algérie — annonces gratuites">سوق السيارات في الجزائر — إعلانات مجانية لبيع وشراء السيارات</span>
+<div class="foot-note" data-ar="الموقع منصة لعرض الإعلانات فقط ولا يتدخل في الصفقات بين البائع والمشتري. عاين السيارة وتحقق من الوثائق قبل أي دفع." data-fr="Le site publie uniquement des annonces et n'intervient pas dans les transactions. Inspectez le véhicule et vérifiez les documents avant tout paiement.">الموقع منصة لعرض الإعلانات فقط ولا يتدخل في الصفقات بين البائع والمشتري. عاين السيارة وتحقق من الوثائق قبل أي دفع.</div>
+</footer>
 <div class="toast" id="tst"></div>
+<button class="fab" onclick="openPost()"><span class="fab-icon">＋</span> <span data-ar="أضف سيارتك مجاناً" data-fr="Vendre ma voiture">أضف سيارتك مجاناً</span></button>
 
-<footer><strong>DARNA IMMO</strong> · <span id="footerText">منصة الجزائر العاصمة للعقارات والسكن الاجتماعي</span>
-<div style="margin-top:14px;display:flex;gap:18px;justify-content:center;flex-wrap:wrap"><a href="#" onclick="openPage('privacy')" style="color:rgba(255,255,255,.6);font-size:12px;text-decoration:none">🔒 سياسة الخصوصية</a><a href="#" onclick="openPage('terms')" style="color:rgba(255,255,255,.6);font-size:12px;text-decoration:none">📋 شروط الاستخدام</a><a href="#" onclick="openPage('contact')" style="color:rgba(255,255,255,.6);font-size:12px;text-decoration:none">📬 اتصل بنا</a><a href="#" onclick="openPage('about')" style="color:rgba(255,255,255,.6);font-size:12px;text-decoration:none">ℹ️ حول الموقع</a></div><div class="footer-flag"></div></footer>
-
-<!-- Page Modal -->
-<div class="overlay" id="pageModal" onclick="if(event.target===this)closePage()" style="align-items:flex-start;padding:14px;overflow-y:auto"><div style="background:#fff;border-radius:18px;max-width:620px;width:100%;margin:auto;box-shadow:0 24px 64px rgba(0,0,0,.3)"><div style="background:linear-gradient(135deg,var(--green),var(--green-mid));padding:20px 22px;border-radius:18px 18px 0 0;display:flex;justify-content:space-between;align-items:center"><div id="pageTitle" style="font-size:17px;font-weight:900;color:#fff"></div><button onclick="closePage()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:17px;cursor:pointer">✕</button></div><div id="pageContent" style="padding:24px;line-height:2;font-size:14px;color:#333"></div></div></div>
-
-<button class="fab" onclick="openPost()"><span class="fab-icon">＋</span> <span id="fabLabel">أضف إعلانك مجاناً</span></button>
-
-<script defer src="communes.js"></script>
+<script defer src="data.js"></script>
 <script defer src="fx.js"></script>
 <script type="module" src="app.js"></script>
 </body>

@@ -1,0 +1,54 @@
+/* Cars Market DZ — طبقة تخصيص فوق styles.css (الأزرق السماوي + عناصر السيارات) */
+:root{ --sky:#0EA5E9; --sky-dark:#0369A1; --sky-pale:#E0F2FE; --green-pale:#E0F2FE; }
+
+.post-btn{padding:9px 18px;background:linear-gradient(135deg,var(--gold-bright),var(--gold));color:#033a5a;border:none;border-radius:9px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px}
+.ms-title .plain{color:inherit}
+.btn-reset{width:100%;padding:10px;border:1.5px solid var(--border);background:#fff;border-radius:10px;font-family:'Cairo',sans-serif;font-weight:700;color:var(--green);cursor:pointer;margin-bottom:14px}
+.btn-reset:hover{background:var(--sky-pale)}
+.filter-drawer .btn-submit{margin-top:6px}
+
+/* ── البطاقة: مميز / عدد الصور / السعر بالسنتيم ── */
+.card-feat{outline:2.5px solid var(--gold);outline-offset:-1px;box-shadow:0 0 0 4px rgba(240,200,85,.30),var(--shadow)}
+.feat-badge{background:linear-gradient(135deg,#F0C855,#C9A84C);color:#033a5a;font-weight:800}
+.c-count{position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.55);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:50px}
+.price-cent{font-size:10px;font-weight:600;color:var(--text-sub);line-height:1.2}
+.card .cspecs{row-gap:3px}
+
+/* ── نافذة التفاصيل: تُمرَّر إن زادت المواصفات ── */
+#dm .modal{overflow-y:auto}
+#dm .mbody{overflow:visible;flex:0 0 auto}
+.mthumbs{display:flex;gap:6px;padding:6px 10px;background:var(--sky-pale);overflow-x:auto}
+.mthumbs:empty{display:none}
+.mthumbs img{width:56px;height:42px;object-fit:cover;border-radius:6px;border:2px solid transparent;cursor:pointer;flex:0 0 auto;opacity:.75}
+.mthumbs img.on{border-color:var(--sky-dark);opacity:1}
+
+/* ── نموذج النشر ── */
+#pm .pmbody{overflow-y:auto}
+.photo-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.photo-thumbs{display:flex;gap:6px;flex-wrap:wrap}
+.pthumb{position:relative;width:54px;height:54px}
+.pthumb img{width:100%;height:100%;object-fit:cover;border-radius:8px;border:1.5px solid var(--border)}
+.pthumb button{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:#CE1126;color:#fff;font-size:11px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#pm .fg label.photo-add,.photo-add{display:inline-flex;align-items:center;justify-content:center;padding:9px 14px;border:2px dashed var(--green-light);border-radius:10px;color:var(--green);font-weight:700;font-size:13px;cursor:pointer;background:var(--sky-pale);margin:0}
+.feat-note{background:#FFF8E7;border:1.5px dashed var(--gold);border-radius:10px;padding:8px 10px;font-size:12px;line-height:1.7;color:#6b4e00}
+
+/* ── نافذة "ميّز إعلانك" بعد النشر ── */
+.feat-prompt{text-align:center}
+.feat-prompt h3{font-size:20px;font-weight:900;color:var(--green);margin:4px 0 6px}
+.feat-prompt p{font-size:14px;color:var(--text-sub);line-height:1.7}
+.feat-price{background:linear-gradient(135deg,#FFF8E7,#FDE9A8);padding:10px;border-radius:12px;font-weight:800;color:#6b4e00;margin:12px 0}
+.feat-price b{font-size:18px}
+.feat-id{font-size:12px;color:var(--text-sub);margin-bottom:12px}
+.feat-id code{background:var(--sky-pale);padding:2px 8px;border-radius:6px;font-size:12px;user-select:all;direction:ltr;display:inline-block}
+.feat-later{background:none;border:none;margin-top:10px;color:var(--text-sub);font-family:'Cairo',sans-serif;font-size:13px;cursor:pointer}
+
+/* ── أقسام الصفحة الرئيسية ── */
+.feat-promo{max-width:1080px;margin:22px auto;padding:24px 20px;border-radius:var(--radius);background:linear-gradient(135deg,#FFF8E7,#FDE9A8);border:2px solid var(--gold);text-align:center;color:#5b4300}
+.fp-badge{font-size:34px;line-height:1}
+.feat-promo h3{font-size:19px;font-weight:900;margin:6px 0}
+.feat-promo p{font-size:14px;line-height:1.8;max-width:560px;margin:0 auto}
+.fp-steps{display:inline-block;text-align:right;margin:10px auto 0;padding-right:22px;font-size:13px;line-height:2;font-weight:600}
+.tips{max-width:1080px;margin:18px auto;padding:18px 22px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow)}
+.tips h3{font-size:16px;font-weight:900;color:var(--green);margin-bottom:8px}
+.tips ul{padding-right:20px;font-size:13px;line-height:2;color:var(--text)}
+.foot-note{margin:10px auto 0;max-width:640px;font-size:11px;opacity:.85;line-height:1.7}
