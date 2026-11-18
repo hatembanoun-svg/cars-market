@@ -6,7 +6,7 @@ import { getFirestore, initializeFirestore, persistentLocalCache, persistentMult
 // ══════════════════════════════════════════════════════
 const SITE_NAME = 'Cars Market DZ';
 // رقم واتساب صاحب الموقع بالصيغة الدولية بدون + (مثال: 2135XXXXXXXX). يُستعمل لطلبات الإعلان المميز.
-const OWNER_WHATSAPP = '213000000000';
+const OWNER_WHATSAPP = '213562517768';
 const FEAT_DAYS = 7;       // مدة الإعلان المميز
 const FEAT_PRICE = 500;    // سعره بالدينار
 
