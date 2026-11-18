@@ -47,55 +47,6 @@
     document.documentElement.addEventListener('mouseleave', function () { if (cur) { reset(cur); cur = null; } });
   }
 
-  // ───────── بطاقة الدليل القانوني (مرة واحدة في الجلسة) ─────────
-  var KEY = 'dz_legal_sheet';
-  var shown = false;
-  try { shown = sessionStorage.getItem(KEY) === '1'; } catch (e) {}
-
-  function anyModalOpen() {
-    return !!document.querySelector('.overlay.open, #filterDrawer.open');
-  }
-  function onAdsTab() {
-    var p = $('tabPanel-ads');
-    return !p || p.classList.contains('active');
-  }
-  function showSheet() {
-    var s = $('legalSheet');
-    if (!s || shown || anyModalOpen() || !onAdsTab()) return;
-    shown = true;
-    try { sessionStorage.setItem(KEY, '1'); } catch (e) {}
-    s.hidden = false;
-    requestAnimationFrame(function () { s.classList.add('show'); });
-  }
-  function hideSheet() {
-    var s = $('legalSheet');
-    if (!s) return;
-    s.classList.remove('show');
-    setTimeout(function () { s.hidden = true; }, 300);
-  }
-  window.DarnaSheet = {
-    close: hideSheet,
-    go: function () {
-      hideSheet();
-      if (window.switchTab) window.switchTab('legal');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
-  if (!shown && $('legalSheet')) {
-    // 1) بعد 30 ثانية من التصفح
-    setTimeout(showSheet, 30000);
-    // 2) عند تجاوز ثلثي الصفحة
-    window.addEventListener('scroll', function onScroll() {
-      var depth = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight;
-      if (depth > 0.66) { window.removeEventListener('scroll', onScroll); setTimeout(showSheet, 800); }
-    }, { passive: true });
-    // 3) نيّة المغادرة على الحاسوب
-    document.addEventListener('mouseout', function (e) {
-      if (!e.relatedTarget && e.clientY <= 0) showSheet();
-    });
-  }
-
   // ───────── الزر العائم: يختفي كلما فُتحت نافذة (نشر/تفاصيل/فلاتر) ─────────
   function syncModalState() {
     var open = !!document.querySelector('.overlay.open, #filterDrawer.open');

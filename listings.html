@@ -2,14 +2,16 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>كل السيارات للبيع في الجزائر | Cars Market DZ</title>
-<meta name="description" content="تصفح كل إعلانات السيارات في الجزائر مع فلاتر حسب الماركة والولاية والوقود وناقل الحركة والسنة والسعر والكيلومترات."/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>كل السيارات وقطع الغيار للبيع في الجزائر | Cars Market DZ</title>
+<meta name="description" content="تصفح كل إعلانات السيارات وقطع الغيار في الجزائر مع فلاتر حسب الماركة والولاية والفئة والحالة والسعر."/>
 <meta name="robots" content="index, follow"/>
+<link rel="canonical" href="https://cars-market0.netlify.app/listings.html"/>
+<meta property="og:url" content="https://cars-market0.netlify.app/listings.html"/>
 <meta property="og:type" content="website"/>
 <meta property="og:site_name" content="Cars Market DZ"/>
-<meta property="og:title" content="كل السيارات للبيع في الجزائر | Cars Market DZ"/>
-<meta property="og:description" content="تصفح كل إعلانات السيارات في الجزائر مع فلاتر حسب الماركة والولاية والوقود وناقل الحركة والسنة والسعر والكيلومترات."/>
+<meta property="og:title" content="كل السيارات وقطع الغيار للبيع في الجزائر | Cars Market DZ"/>
+<meta property="og:description" content="تصفح كل إعلانات السيارات وقطع الغيار في الجزائر مع فلاتر حسب الماركة والولاية والفئة والحالة والسعر."/>
 <meta property="og:image" content="https://cars-market0.netlify.app/assets/icon-512.png"/>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0369A1"/>
@@ -29,58 +31,68 @@
 <body data-mode="listings">
 <header>
   <div style="display:flex;gap:8px;align-items:center">
-    <button id="postBtn" class="post-btn" onclick="openPost()">＋ <span data-ar="أضف سيارتك" data-fr="Vendre">أضف سيارتك</span></button>
-    <button id="langBtn" class="lang-btn" onclick="toggleLang()">FR</button>
+    <button id="postBtn" class="post-btn" data-action="openPost">＋ <span data-ar="أضف إعلانك" data-fr="Publier">أضف إعلانك</span></button>
+    <button id="langBtn" class="lang-btn" data-action="toggleLang">FR</button>
   </div>
   <a class="logo" href="index.html">
-    <div class="logo-text" style="text-align:left"><div class="d1">CARS MARKET</div><div class="d2" data-ar="سوق السيارات · الجزائر" data-fr="VOITURES · ALGÉRIE">سوق السيارات · الجزائر</div></div>
+    <div class="logo-text" style="text-align:left"><div class="d1">CARS MARKET</div><div class="d2" data-ar="سيارات وقطع غيار · الجزائر" data-fr="VOITURES &amp; PIÈCES · ALGÉRIE">سيارات وقطع غيار · الجزائر</div></div>
     <div class="logo-badge"><img src="assets/logo.png" alt="Cars Market DZ"></div>
   </a>
 </header>
+<nav class="kind-tabs" id="kindTabs" role="tablist" aria-label="نوع الإعلانات">
+  <button type="button" role="tab" class="kind-tab on" data-action="setKind" data-k="car" aria-selected="true" data-ar="🚗 سيارات" data-fr="🚗 Voitures">🚗 سيارات</button>
+  <button type="button" role="tab" class="kind-tab" data-action="setKind" data-k="part" aria-selected="false" data-ar="🔧 قطع غيار" data-fr="🔧 Pièces auto">🔧 قطع غيار</button>
+</nav>
 
-<div class="listings-topbar-page"><a href="index.html" class="listings-back" data-ar="→ العودة للخريطة" data-fr="→ Retour à la carte">→ العودة للخريطة</a></div>
-<h1 class="listings-title" data-ar="🚗 جميع السيارات" data-fr="🚗 Toutes les voitures">🚗 جميع السيارات</h1>
+<div class="listings-topbar-page"><a href="index.html" class="listings-back" data-ar="→ العودة للخريطة" data-fr="→ Retour à la carte" data-ar-car="→ العودة للخريطة" data-fr-car="→ Retour à la carte" data-ar-part="→ العودة للرئيسية" data-fr-part="→ Retour à l’accueil">→ العودة للخريطة</a></div>
+<h1 class="listings-title" data-ar="🚗 جميع السيارات" data-fr="🚗 Toutes les voitures" data-ar-car="🚗 جميع السيارات" data-fr-car="🚗 Toutes les voitures" data-ar-part="🔧 جميع قطع الغيار" data-fr-part="🔧 Toutes les pièces auto">🚗 جميع السيارات</h1>
 
 <section class="hero" style="padding:14px 20px 22px">
   <div class="search-wrap" style="margin-top:0">
-    <button id="searchBtn" onclick="doSearch()" data-ar="🔍 بحث" data-fr="🔍 Chercher">🔍 بحث</button>
-    <input id="searchQ" type="text" placeholder="ابحث: ماركة، موديل، ولاية..." onkeyup="if(event.key==='Enter')doSearch()"/>
+    <button id="searchBtn" data-action="doSearch" data-ar="🔍 بحث" data-fr="🔍 Chercher">🔍 بحث</button>
+    <input id="searchQ" type="text" placeholder="ابحث: ماركة، موديل، ولاية..."/>
   </div>
 </section>
 
 <!-- Filter Drawer (mobile) -->
-<div class="filter-drawer-overlay" id="filterOverlay" onclick="closeFilterDrawer()"></div>
+<div class="filter-drawer-overlay" id="filterOverlay" data-action="closeFilterDrawer"></div>
 <div class="filter-drawer" id="filterDrawer">
-  <div class="filter-drawer-head"><h3 data-ar="🔍 فلاتر البحث" data-fr="🔍 Filtres">🔍 فلاتر البحث</h3><button class="filter-drawer-close" onclick="closeFilterDrawer()" aria-label="close">✕</button></div>
-<div class="fcard"><div class="ftitle" data-ar="🚗 الماركة" data-fr="🚗 Marque">🚗 الماركة</div><select class="fsel" data-f="brand"></select></div>
+  <div class="filter-drawer-head"><h3 data-ar="🔍 فلاتر البحث" data-fr="🔍 Filtres">🔍 فلاتر البحث</h3><button class="filter-drawer-close" data-action="closeFilterDrawer" aria-label="close">✕</button></div>
+<div class="fcard" data-for="car"><div class="ftitle" data-ar="🚗 الماركة" data-fr="🚗 Marque">🚗 الماركة</div><select class="fsel" data-f="brand"></select></div>
+<div class="fcard" data-for="part"><div class="ftitle" data-ar="🏷️ الفئة" data-fr="🏷️ Catégorie">🏷️ الفئة</div><select class="fsel" data-f="pcat"></select></div>
+<div class="fcard" data-for="part"><div class="ftitle" data-ar="🚘 الماركة المتوافقة" data-fr="🚘 Marque compatible">🚘 الماركة المتوافقة</div><select class="fsel" data-f="cbrand"></select></div>
+<div class="fcard" data-for="part"><div class="ftitle" data-ar="✅ الحالة" data-fr="✅ État">✅ الحالة</div><div class="chips" data-chips="pcond" data-cls="chip"></div></div>
 <div class="fcard"><div class="ftitle" data-ar="📍 الولاية" data-fr="📍 Wilaya">📍 الولاية</div><select class="fsel" data-f="wilaya"></select></div>
-<div class="fcard"><div class="ftitle" data-ar="⛽ الوقود" data-fr="⛽ Carburant">⛽ الوقود</div><div class="chips" data-chips="fuel" data-cls="chip"></div></div>
-<div class="fcard"><div class="ftitle" data-ar="⚙️ ناقل الحركة" data-fr="⚙️ Boîte">⚙️ ناقل الحركة</div><div class="chips" data-chips="gear" data-cls="chip"></div></div>
+<div class="fcard" data-for="car"><div class="ftitle" data-ar="⛽ الوقود" data-fr="⛽ Carburant">⛽ الوقود</div><div class="chips" data-chips="fuel" data-cls="chip"></div></div>
+<div class="fcard" data-for="car"><div class="ftitle" data-ar="⚙️ ناقل الحركة" data-fr="⚙️ Boîte">⚙️ ناقل الحركة</div><div class="chips" data-chips="gear" data-cls="chip"></div></div>
 <div class="fcard"><div class="ftitle" data-ar="🧑‍💼 البائع" data-fr="🧑‍💼 Vendeur">🧑‍💼 البائع</div><div class="chips" data-chips="seller" data-cls="chip"></div></div>
-<div class="fcard"><div class="ftitle" data-ar="📅 سنة الصنع" data-fr="📅 Année">📅 سنة الصنع</div><select class="fsel" data-f="ymin"></select></div>
+<div class="fcard" data-for="car"><div class="ftitle" data-ar="📅 سنة الصنع" data-fr="📅 Année">📅 سنة الصنع</div><select class="fsel" data-f="ymin"></select></div>
 <div class="fcard"><div class="ftitle" data-ar="💰 السعر (دج)" data-fr="💰 Prix (DA)">💰 السعر (دج)</div><div class="prange"><input data-f="pmin" type="number" inputmode="numeric" data-ar-ph="من" data-fr-ph="Min" placeholder="من"/><span>–</span><input data-f="pmax" type="number" inputmode="numeric" data-ar-ph="إلى" data-fr-ph="Max" placeholder="إلى"/></div></div>
-<div class="fcard"><div class="ftitle" data-ar="🛣️ أقصى كيلومترات" data-fr="🛣️ Km maximum">🛣️ أقصى كيلومترات</div><div class="prange"><input data-f="kmax" type="number" inputmode="numeric" data-ar-ph="مثال: 150000" data-fr-ph="ex : 150000" placeholder="مثال: 150000"/></div></div>
-<button type="button" class="btn-reset" onclick="resetFilters()" data-ar="↺ مسح الفلاتر" data-fr="↺ Réinitialiser">↺ مسح الفلاتر</button>
-  <button type="button" class="btn-submit" onclick="closeFilterDrawer()" data-ar="عرض النتائج" data-fr="Voir les résultats">عرض النتائج</button>
+<div class="fcard" data-for="car"><div class="ftitle" data-ar="🛣️ أقصى كيلومترات" data-fr="🛣️ Km maximum">🛣️ أقصى كيلومترات</div><div class="prange"><input data-f="kmax" type="number" inputmode="numeric" data-ar-ph="مثال: 150000" data-fr-ph="ex : 150000" placeholder="مثال: 150000"/></div></div>
+<button type="button" class="btn-reset" data-action="resetFilters" data-ar="↺ مسح الفلاتر" data-fr="↺ Réinitialiser">↺ مسح الفلاتر</button>
+  <button type="button" class="btn-submit" data-action="closeFilterDrawer" data-ar="عرض النتائج" data-fr="Voir les résultats">عرض النتائج</button>
 </div>
 
 <div class="main">
   <aside class="sidebar">
-<div class="fcard"><div class="ftitle" data-ar="🚗 الماركة" data-fr="🚗 Marque">🚗 الماركة</div><select class="fsel" data-f="brand"></select></div>
+<div class="fcard" data-for="car"><div class="ftitle" data-ar="🚗 الماركة" data-fr="🚗 Marque">🚗 الماركة</div><select class="fsel" data-f="brand"></select></div>
+<div class="fcard" data-for="part"><div class="ftitle" data-ar="🏷️ الفئة" data-fr="🏷️ Catégorie">🏷️ الفئة</div><select class="fsel" data-f="pcat"></select></div>
+<div class="fcard" data-for="part"><div class="ftitle" data-ar="🚘 الماركة المتوافقة" data-fr="🚘 Marque compatible">🚘 الماركة المتوافقة</div><select class="fsel" data-f="cbrand"></select></div>
+<div class="fcard" data-for="part"><div class="ftitle" data-ar="✅ الحالة" data-fr="✅ État">✅ الحالة</div><div class="chips" data-chips="pcond" data-cls="chip"></div></div>
 <div class="fcard"><div class="ftitle" data-ar="📍 الولاية" data-fr="📍 Wilaya">📍 الولاية</div><select class="fsel" data-f="wilaya"></select></div>
-<div class="fcard"><div class="ftitle" data-ar="⛽ الوقود" data-fr="⛽ Carburant">⛽ الوقود</div><div class="chips" data-chips="fuel" data-cls="chip"></div></div>
-<div class="fcard"><div class="ftitle" data-ar="⚙️ ناقل الحركة" data-fr="⚙️ Boîte">⚙️ ناقل الحركة</div><div class="chips" data-chips="gear" data-cls="chip"></div></div>
+<div class="fcard" data-for="car"><div class="ftitle" data-ar="⛽ الوقود" data-fr="⛽ Carburant">⛽ الوقود</div><div class="chips" data-chips="fuel" data-cls="chip"></div></div>
+<div class="fcard" data-for="car"><div class="ftitle" data-ar="⚙️ ناقل الحركة" data-fr="⚙️ Boîte">⚙️ ناقل الحركة</div><div class="chips" data-chips="gear" data-cls="chip"></div></div>
 <div class="fcard"><div class="ftitle" data-ar="🧑‍💼 البائع" data-fr="🧑‍💼 Vendeur">🧑‍💼 البائع</div><div class="chips" data-chips="seller" data-cls="chip"></div></div>
-<div class="fcard"><div class="ftitle" data-ar="📅 سنة الصنع" data-fr="📅 Année">📅 سنة الصنع</div><select class="fsel" data-f="ymin"></select></div>
+<div class="fcard" data-for="car"><div class="ftitle" data-ar="📅 سنة الصنع" data-fr="📅 Année">📅 سنة الصنع</div><select class="fsel" data-f="ymin"></select></div>
 <div class="fcard"><div class="ftitle" data-ar="💰 السعر (دج)" data-fr="💰 Prix (DA)">💰 السعر (دج)</div><div class="prange"><input data-f="pmin" type="number" inputmode="numeric" data-ar-ph="من" data-fr-ph="Min" placeholder="من"/><span>–</span><input data-f="pmax" type="number" inputmode="numeric" data-ar-ph="إلى" data-fr-ph="Max" placeholder="إلى"/></div></div>
-<div class="fcard"><div class="ftitle" data-ar="🛣️ أقصى كيلومترات" data-fr="🛣️ Km maximum">🛣️ أقصى كيلومترات</div><div class="prange"><input data-f="kmax" type="number" inputmode="numeric" data-ar-ph="مثال: 150000" data-fr-ph="ex : 150000" placeholder="مثال: 150000"/></div></div>
-<button type="button" class="btn-reset" onclick="resetFilters()" data-ar="↺ مسح الفلاتر" data-fr="↺ Réinitialiser">↺ مسح الفلاتر</button>
+<div class="fcard" data-for="car"><div class="ftitle" data-ar="🛣️ أقصى كيلومترات" data-fr="🛣️ Km maximum">🛣️ أقصى كيلومترات</div><div class="prange"><input data-f="kmax" type="number" inputmode="numeric" data-ar-ph="مثال: 150000" data-fr-ph="ex : 150000" placeholder="مثال: 150000"/></div></div>
+<button type="button" class="btn-reset" data-action="resetFilters" data-ar="↺ مسح الفلاتر" data-fr="↺ Réinitialiser">↺ مسح الفلاتر</button>
   </aside>
   <div class="content">
-    <button class="mob-filter-btn" id="mobFilterBtn" onclick="openFilterDrawer()" data-ar="🔍 فلاتر البحث" data-fr="🔍 Filtres">🔍 فلاتر البحث</button>
+    <button class="mob-filter-btn" id="mobFilterBtn" data-action="openFilterDrawer" data-ar="🔍 فلاتر البحث" data-fr="🔍 Filtres">🔍 فلاتر البحث</button>
     <div class="topbar">
       <div class="rcount"><span class="live-dot"></span><span data-ar="عرض" data-fr="Affichage">عرض</span> <strong id="rn">0</strong> <span data-ar="إعلان" data-fr="annonces">إعلان</span></div>
-      <select id="srt" class="fsel" style="width:auto" onchange="sl()">
+      <select id="srt" class="fsel" style="width:auto">
         <option value="new" data-ar="الأحدث" data-fr="Plus récentes">الأحدث</option>
         <option value="pa" data-ar="السعر: الأقل" data-fr="Prix croissant">السعر: الأقل</option>
         <option value="pd" data-ar="السعر: الأعلى" data-fr="Prix décroissant">السعر: الأعلى</option>
@@ -93,11 +105,11 @@
 </div>
 
 <!-- Detail Modal -->
-<div class="overlay" id="dm" onclick="cov(event,'dm')">
-  <div class="modal">
+<div class="overlay" id="dm">
+  <div class="modal" role="dialog" aria-modal="true">
     <div class="modal-top">
       <div class="mimg" id="mimg"></div>
-      <button class="mclose" onclick="cm('dm')" aria-label="close">✕</button>
+      <button class="mclose" data-action="close" data-target="dm" aria-label="close">✕</button>
       <div id="mviewsBadge" style="position:absolute;top:12px;right:12px;background:rgba(0,0,0,.5);color:#fff;border-radius:50px;padding:4px 10px;font-size:12px;display:flex;align-items:center;gap:4px">👁️ <span id="mviewsNum">0</span></div>
       <div class="mthumbs" id="mthumbs"></div>
     </div>
@@ -109,7 +121,7 @@
       <p class="mdesc" id="mds"></p>
       <div class="mspecs" id="msp"></div>
       <div style="margin-bottom:14px">
-        <button class="share-link-btn" id="shareLinkBtn" onclick="copyAdLink()">🔗 <span id="shareLinkLabel">نسخ رابط الإعلان</span></button>
+        <button class="share-link-btn" id="shareLinkBtn" data-action="copyAdLink">🔗 <span id="shareLinkLabel">نسخ رابط الإعلان</span></button>
       </div>
       <div class="social-buttons" id="socialBtns"></div>
       <div class="macts">
@@ -120,40 +132,59 @@
   </div>
 </div>
 <!-- Post Modal -->
-<div class="overlay" id="pm" onclick="cov(event,'pm')"><div class="modal pmodal">
-  <div class="pmhead"><div class="pmhead-title" data-ar="📣 أضف سيارتك" data-fr="📣 Publier une voiture">📣 أضف سيارتك</div><div class="pmhead-sub" data-ar="مجاني – بدون تسجيل – فوري" data-fr="Gratuit – sans inscription – immédiat">مجاني – بدون تسجيل – فوري</div><button class="pmclose" onclick="cm('pm')" aria-label="close">✕</button></div>
+<div class="overlay" id="pm"><div class="modal pmodal" role="dialog" aria-modal="true">
+  <div class="pmhead"><div class="pmhead-title" data-ar="📣 أضف إعلانك" data-fr="📣 Publier une annonce" data-ar-car="📣 أضف سيارتك" data-fr-car="📣 Publier une voiture" data-ar-part="📣 أضف قطعة غيار" data-fr-part="📣 Publier une pièce auto">📣 أضف إعلانك</div><div class="pmhead-sub" data-ar="مجاني – بدون تسجيل – فوري" data-fr="Gratuit – sans inscription – immédiat">مجاني – بدون تسجيل – فوري</div><button class="pmclose" data-action="close" data-target="pm" aria-label="close">✕</button></div>
   <div class="pmbody">
+    <div class="pk-step" id="pkStep">
+      <div class="pk-q" data-ar="ماذا تريد أن تنشر؟" data-fr="Que voulez-vous publier ?">ماذا تريد أن تنشر؟</div>
+      <div class="pk-opts">
+        <button type="button" class="pk-btn" data-action="pickKind" data-k="car"><span class="pk-ic">🚗</span><b data-ar="سيارة" data-fr="Voiture">سيارة</b><small data-ar="بيع سيارة" data-fr="Vendre une voiture">بيع سيارة</small></button>
+        <button type="button" class="pk-btn" data-action="pickKind" data-k="part"><span class="pk-ic">🔧</span><b data-ar="قطعة غيار" data-fr="Pièce auto">قطعة غيار</b><small data-ar="بيع قطعة أو إكسسوار" data-fr="Vendre une pièce ou accessoire">بيع قطعة أو إكسسوار</small></button>
+      </div>
+    </div>
+    <button type="button" class="pk-back" id="pkBack" data-action="pickKindBack" hidden data-ar="→ تغيير النوع" data-fr="→ Changer le type">→ تغيير النوع</button>
+
+    <div class="pf-group" data-pfor="car" hidden>
     <div class="fg-row"><div class="fg"><label data-ar="الماركة" data-fr="Marque">الماركة</label><select id="pbrand"></select></div><div class="fg"><label data-ar="الموديل" data-fr="Modèle">الموديل</label><input id="pmodel" type="text" maxlength="40" data-ar-ph="مثال: Clio 4" data-fr-ph="ex : Clio 4" placeholder="مثال: Clio 4"/></div></div>
     <div class="fg-row"><div class="fg"><label data-ar="سنة الصنع" data-fr="Année">سنة الصنع</label><select id="pyear"></select></div><div class="fg"><label data-ar="الكيلومترات" data-fr="Kilométrage">الكيلومترات</label><input id="pkm" type="number" inputmode="numeric" min="0" max="2000000" data-ar-ph="مثال: 120000" data-fr-ph="ex : 120000" placeholder="مثال: 120000"/></div></div>
     <div class="fg-row"><div class="fg"><label data-ar="الوقود" data-fr="Carburant">الوقود</label><select id="pfuel"></select></div><div class="fg"><label data-ar="ناقل الحركة" data-fr="Boîte">ناقل الحركة</label><select id="pgear"></select></div></div>
-    <div class="fg-row"><div class="fg"><label data-ar="الولاية" data-fr="Wilaya">الولاية</label><select id="pwil"></select></div><div class="fg"><label data-ar="البائع" data-fr="Vendeur">البائع</label><select id="pseller"></select></div></div>
-    <div class="fg-row"><div class="fg"><label data-ar="السعر (دج)" data-fr="Prix (DA)">السعر (دج)</label><input id="pp" type="number" inputmode="numeric" min="0" data-ar-ph="مثال: 2500000" data-fr-ph="ex : 2500000" placeholder="مثال: 2500000"/></div><div class="fg"><label data-ar="رقم الهاتف" data-fr="Téléphone">رقم الهاتف</label><input id="ph" type="tel" placeholder="07XX XX XX XX"/></div></div>
-    <div class="fg"><label data-ar="وصف السيارة (اختياري)" data-fr="Description (facultatif)">وصف السيارة (اختياري)</label><textarea id="pd" rows="3" maxlength="1500" data-ar-ph="الحالة، الصيانة، الخيارات، الأوراق..." data-fr-ph="État, entretien, options, papiers…" placeholder="الحالة، الصيانة، الخيارات، الأوراق..."></textarea></div>
-    <div class="fg"><label data-ar="📷 صور السيارة (حتى 4 صور)" data-fr="📷 Photos (jusqu'à 4)">📷 صور السيارة (حتى 4 صور)</label>
-      <div class="photo-row"><div id="postThumbs" class="photo-thumbs"></div><label id="imgAddBtn" class="photo-add" for="imgFileInput"><span data-ar="＋ إضافة صور" data-fr="＋ Ajouter">＋ إضافة صور</span></label><input id="imgFileInput" type="file" multiple accept="image/jpeg,image/png,image/webp" hidden onchange="handleImgUpload(this)"/></div>
     </div>
-    <div class="feat-note"><b data-ar="⭐ تريد ظهوراً أكبر؟" data-fr="⭐ Plus de visibilité ?">⭐ تريد ظهوراً أكبر؟</b> <span data-ar="بعد النشر يمكنك تمييز إعلانك: 7 أيام في أعلى القائمة مقابل 500 دج." data-fr="Après la publication, mettez votre annonce en avant : 7 jours en haut de la liste pour 500 DA.">بعد النشر يمكنك تمييز إعلانك: 7 أيام في أعلى القائمة مقابل 500 دج.</span></div>
-    <button class="btn-submit" onclick="sub()" data-ar="🚀 نشر الإعلان مجاناً" data-fr="🚀 Publier gratuitement">🚀 نشر الإعلان مجاناً</button>
+
+    <div class="pf-group" data-pfor="part" hidden>
+    <div class="fg-row"><div class="fg"><label data-ar="اسم القطعة" data-fr="Nom de la pièce">اسم القطعة</label><input id="ppname" type="text" maxlength="80" data-ar-ph="مثال: Plaquettes de frein avant" data-fr-ph="ex : Plaquettes de frein avant" placeholder="مثال: Plaquettes de frein avant"/></div><div class="fg"><label data-ar="رقم القطعة (اختياري)" data-fr="Référence (facultatif)">رقم القطعة (اختياري)</label><input id="ppnum" type="text" maxlength="40" dir="ltr" data-ar-ph="مثال: 7701208265" data-fr-ph="ex : 7701208265" placeholder="مثال: 7701208265"/></div></div>
+    <div class="fg-row"><div class="fg"><label data-ar="الفئة" data-fr="Catégorie">الفئة</label><select id="ppcat"></select></div><div class="fg"><label data-ar="الحالة" data-fr="État">الحالة</label><select id="ppcond"></select></div></div>
+    <div class="fg-row"><div class="fg"><label data-ar="الماركة المتوافقة (اختياري)" data-fr="Marque compatible (facultatif)">الماركة المتوافقة (اختياري)</label><select id="ppbrand"></select></div><div class="fg"><label data-ar="الموديل المتوافق (اختياري)" data-fr="Modèle compatible (facultatif)">الموديل المتوافق (اختياري)</label><input id="ppmodel" type="text" maxlength="40" data-ar-ph="مثال: Clio 4" data-fr-ph="ex : Clio 4" placeholder="مثال: Clio 4"/></div></div>
+    <div class="fg-row"><div class="fg"><label data-ar="متوافقة من سنة (اختياري)" data-fr="Compatible dès (facultatif)">متوافقة من سنة (اختياري)</label><select id="ppyf"></select></div><div class="fg"><label data-ar="إلى سنة (اختياري)" data-fr="Jusqu’à (facultatif)">إلى سنة (اختياري)</label><select id="ppyt"></select></div></div>
+    </div>
+
+    <div class="fg-row pk-common" hidden><div class="fg"><label data-ar="الولاية" data-fr="Wilaya">الولاية</label><select id="pwil"></select></div><div class="fg"><label data-ar="البائع" data-fr="Vendeur">البائع</label><select id="pseller"></select></div></div>
+    <div class="fg-row pk-common" hidden><div class="fg"><label data-ar="السعر (دج)" data-fr="Prix (DA)">السعر (دج)</label><input id="pp" type="number" inputmode="numeric" min="0" data-ar-ph="مثال: 2500000" data-fr-ph="ex : 2500000" placeholder="مثال: 2500000"/></div><div class="fg"><label data-ar="رقم الهاتف" data-fr="Téléphone">رقم الهاتف</label><input id="ph" type="tel" placeholder="07XX XX XX XX"/></div></div>
+    <div class="fg pk-common" hidden><label data-ar="وصف السيارة (اختياري)" data-fr="Description (facultatif)" data-ar-car="وصف السيارة (اختياري)" data-fr-car="Description (facultatif)" data-ar-part="وصف القطعة (اختياري)" data-fr-part="Description de la pièce (facultatif)">وصف السيارة (اختياري)</label><textarea id="pd" rows="3" maxlength="1500" data-ar-ph="الحالة، التفاصيل، الأوراق..." data-fr-ph="État, détails, papiers…" placeholder="الحالة، التفاصيل، الأوراق..."></textarea></div>
+    <div class="fg pk-common" hidden><label data-ar="📷 صور السيارة (حتى 4 صور)" data-fr="📷 Photos (jusqu'à 4)" data-ar-car="📷 صور السيارة (حتى 4 صور)" data-fr-car="📷 Photos (jusqu'à 4)" data-ar-part="📷 صور القطعة (حتى 4 صور)" data-fr-part="📷 Photos de la pièce (jusqu'à 4)">📷 صور السيارة (حتى 4 صور)</label>
+      <div class="photo-row"><div id="postThumbs" class="photo-thumbs"></div><label id="imgAddBtn" class="photo-add" for="imgFileInput"><span data-ar="＋ إضافة صور" data-fr="＋ Ajouter">＋ إضافة صور</span></label><input id="imgFileInput" type="file" multiple accept="image/jpeg,image/png,image/webp" hidden/></div>
+    </div>
+    <div class="feat-note pk-common" hidden><b data-ar="⭐ تريد ظهوراً أكبر؟" data-fr="⭐ Plus de visibilité ?">⭐ تريد ظهوراً أكبر؟</b> <span data-ar="بعد النشر يمكنك تمييز إعلانك: 7 أيام في أعلى القائمة مقابل 500 دج." data-fr="Après la publication, mettez votre annonce en avant : 7 jours en haut de la liste pour 500 DA.">بعد النشر يمكنك تمييز إعلانك: 7 أيام في أعلى القائمة مقابل 500 دج.</span></div>
+    <button class="btn-submit pk-common" hidden data-action="sub" data-ar="🚀 نشر الإعلان مجاناً" data-fr="🚀 Publier gratuitement">🚀 نشر الإعلان مجاناً</button>
   </div>
 </div></div>
 
 <!-- بعد النشر: عرض الإعلان المميز -->
-<div class="overlay" id="featPrompt" onclick="cov(event,'featPrompt')"><div class="modal" style="max-width:420px">
+<div class="overlay" id="featPrompt"><div class="modal" role="dialog" aria-modal="true" style="max-width:420px">
   <div class="mbody feat-prompt">
     <div style="font-size:46px">✅</div>
     <h3 data-ar="تم نشر إعلانك!" data-fr="Annonce publiée !">تم نشر إعلانك!</h3>
-    <p data-ar="هل تريد أن يظهر إعلانك في أعلى القائمة وعلى الخريطة بتمييز خاص؟" data-fr="Voulez-vous placer votre annonce en haut de la liste, avec un badge sponsorisé ?">هل تريد أن يظهر إعلانك في أعلى القائمة وعلى الخريطة بتمييز خاص؟</p>
+    <p data-ar="هل تريد أن يظهر إعلانك في أعلى القائمة بتمييز خاص؟" data-fr="Voulez-vous placer votre annonce en haut de la liste, avec un badge sponsorisé ?">هل تريد أن يظهر إعلانك في أعلى القائمة بتمييز خاص؟</p>
     <div class="feat-price">⭐ <span data-ar="7 أيام في الأعلى" data-fr="7 jours en haut">7 أيام في الأعلى</span> = <b>500 DA</b></div>
     <div class="feat-id"><span data-ar="رقم إعلانك:" data-fr="N° de votre annonce :">رقم إعلانك:</span> <code id="featAdId"></code></div>
     <button class="btn-submit" id="featGo" type="button" data-ar="⭐ ميّز إعلاني عبر واتساب" data-fr="⭐ Sponsoriser via WhatsApp">⭐ ميّز إعلاني عبر واتساب</button>
-    <button class="feat-later" type="button" onclick="cm('featPrompt')" data-ar="لاحقاً" data-fr="Plus tard">لاحقاً</button>
+    <button class="feat-later" type="button" data-action="close" data-target="featPrompt" data-ar="لاحقاً" data-fr="Plus tard">لاحقاً</button>
   </div>
 </div></div>
-<footer><strong>CARS MARKET DZ</strong> · <span data-ar="سوق السيارات في الجزائر — إعلانات مجانية لبيع وشراء السيارات" data-fr="Le marché de l'automobile en Algérie — annonces gratuites">سوق السيارات في الجزائر — إعلانات مجانية لبيع وشراء السيارات</span>
-<div class="foot-note" data-ar="الموقع منصة لعرض الإعلانات فقط ولا يتدخل في الصفقات بين البائع والمشتري. عاين السيارة وتحقق من الوثائق قبل أي دفع." data-fr="Le site publie uniquement des annonces et n'intervient pas dans les transactions. Inspectez le véhicule et vérifiez les documents avant tout paiement.">الموقع منصة لعرض الإعلانات فقط ولا يتدخل في الصفقات بين البائع والمشتري. عاين السيارة وتحقق من الوثائق قبل أي دفع.</div>
+<footer><strong>CARS MARKET DZ</strong> · <span data-ar="سوق السيارات وقطع الغيار في الجزائر — إعلانات مجانية للبيع والشراء" data-fr="Voitures et pièces auto en Algérie — annonces gratuites">سوق السيارات وقطع الغيار في الجزائر — إعلانات مجانية للبيع والشراء</span>
+<div class="foot-note" data-ar="الموقع منصة لعرض الإعلانات فقط ولا يتدخل في الصفقات بين البائع والمشتري. عاين السيارة أو القطعة وتحقق من الوثائق قبل أي دفع." data-fr="Le site publie uniquement des annonces et n'intervient pas dans les transactions. Inspectez le véhicule ou la pièce et vérifiez les documents avant tout paiement.">الموقع منصة لعرض الإعلانات فقط ولا يتدخل في الصفقات بين البائع والمشتري. عاين السيارة أو القطعة وتحقق من الوثائق قبل أي دفع.</div>
 </footer>
 <div class="toast" id="tst"></div>
-<button class="fab" onclick="openPost()"><span class="fab-icon">＋</span> <span data-ar="أضف سيارتك مجاناً" data-fr="Vendre ma voiture">أضف سيارتك مجاناً</span></button>
+<button class="fab" data-action="openPost"><span class="fab-icon">＋</span> <span data-ar="أضف إعلانك مجاناً" data-fr="Publier gratuitement">أضف إعلانك مجاناً</span></button>
 
 <script defer src="data.js"></script>
 <script defer src="fx.js"></script>

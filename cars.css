@@ -52,3 +52,49 @@
 .tips h3{font-size:16px;font-weight:900;color:var(--green);margin-bottom:8px}
 .tips ul{padding-right:20px;font-size:13px;line-height:2;color:var(--text)}
 .foot-note{margin:10px auto 0;max-width:640px;font-size:11px;opacity:.85;line-height:1.7}
+
+/* ═══ قطع الغيار: تبويب النوع، نموذج النشر بخطوتين، البطاقة، شريط الولايات ═══ */
+[hidden]{display:none!important}
+/* عناصر data-for تظهر حسب النوع الحالي (body[data-kind]) — الافتراضي: سيارات */
+body:not([data-kind="part"]) [data-for="part"],
+body[data-kind="part"] [data-for="car"]{display:none!important}
+
+.kind-tabs{display:flex;gap:8px;justify-content:center;padding:10px 12px;background:#fff;border-bottom:1px solid var(--border)}
+.kind-tab{flex:1 1 0;max-width:230px;padding:10px 14px;border-radius:14px;border:2px solid var(--border);background:var(--bg);font-family:'Cairo',sans-serif;font-size:15px;font-weight:800;color:var(--green);cursor:pointer;transition:.18s}
+.kind-tab:hover{border-color:var(--green-light)}
+.kind-tab.on{background:linear-gradient(135deg,var(--green-light),var(--green));border-color:var(--green);color:#fff;box-shadow:0 3px 10px rgba(3,105,161,.3)}
+.kind-tab:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+/* نموذج النشر: الخطوة الأولى + مجموعات الحقول */
+#pm .pf-group:not([hidden]){display:contents}
+#pm .pk-step,#pm .pk-back{grid-column:1 / -1}
+.pk-q{font-weight:800;color:var(--green);font-size:15px;text-align:center;margin:6px 0 10px}
+.pk-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pk-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:18px 8px;border-radius:16px;border:2px solid var(--border);background:var(--bg);cursor:pointer;font-family:'Cairo',sans-serif;color:var(--green);transition:.18s}
+.pk-btn:hover,.pk-btn:focus-visible{border-color:var(--green-light);background:#E0F2FE;transform:translateY(-2px)}
+.pk-btn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.pk-ic{font-size:34px;line-height:1}
+.pk-btn b{font-size:16px;font-weight:900}
+.pk-btn small{font-size:11px;color:var(--text-sub);font-weight:600}
+.pk-back{justify-self:start;background:none;border:none;color:var(--green);font-family:'Cairo',sans-serif;font-weight:700;font-size:13px;cursor:pointer;padding:0 0 2px}
+.pk-back:hover{text-decoration:underline}
+
+/* بطاقة القطعة وشارات الحالة */
+.pcond{font-weight:800!important}
+.pcond-new{background:#DCFCE7!important;color:#166534}
+.pcond-used{background:#E2E8F0!important;color:#334155}
+.pcond-refurbished{background:#E0E7FF!important;color:#3730A3}
+.pcond-lg{padding:5px 13px;border-radius:50px;font-weight:800;font-size:13px}
+.card-part .cimg-ph{font-size:42px}
+.pcompat{color:var(--green);font-weight:700}
+.pcompat span{unicode-bidi:isolate}
+
+/* شريط الولايات (الرئيسية — تبويب القطع) */
+.ms-wstrip{display:flex;gap:6px;overflow-x:auto;padding:8px 14px;background:#fff;border-bottom:1px solid var(--border);scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.ms-wstrip::-webkit-scrollbar{display:none}
+.wchip{flex:none;padding:5px 12px;border-radius:50px;border:1.5px solid var(--border);background:#fff;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;color:#444;cursor:pointer;white-space:nowrap;transition:.18s}
+.wchip:hover{border-color:var(--green-light)}
+.wchip.active,.wchip.on{background:var(--green);border-color:var(--green);color:#fff}
+/* تبويب القطع: لا خريطة تتراكب عليها الورقة السفلية، فنلغي التراكب كي لا تغطي الفلاتر */
+body[data-kind="part"] .home-sheet{margin-top:0;border-radius:0;box-shadow:none}
+body[data-kind="part"] .home-sheet::before{display:none}

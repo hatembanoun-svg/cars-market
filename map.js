@@ -130,7 +130,7 @@
       ov.innerHTML = '<div class="dm-spin"></div><div>' + t('جارٍ تحميل السيارات…', 'Chargement des voitures…') + '</div>';
     } else if (s === 'error') {
       ov.className = 'dm-overlay show';
-      ov.innerHTML = '<div>⚠️ ' + t('تعذّر تحميل الإعلانات', 'Impossible de charger les annonces') + '</div><button type="button" class="dm-btn dm-call" onclick="window.retryLoadAds&&window.retryLoadAds()">' + t('إعادة المحاولة', 'Réessayer') + '</button>';
+      ov.innerHTML = '<div>⚠️ ' + t('تعذّر تحميل الإعلانات', 'Impossible de charger les annonces') + '</div><button type="button" class="dm-btn dm-call" data-action="retry">' + t('إعادة المحاولة', 'Réessayer') + '</button>';
     } else {
       ov.className = 'dm-overlay';
       ov.innerHTML = '';
@@ -308,7 +308,9 @@
     render: function (list) { state.loaded = true; state.list = list || []; setState('ready'); render(list); },
     setState: setState,
     focus: focusAd,
-    relabel: function () { if (map && state.loaded) render(state.list); }
+    relabel: function () { if (map && state.loaded) render(state.list); },
+    // تُستدعى عند إظهار الخريطة بعد إخفائها (تبويب قطع الغيار) كي يعيد Leaflet حساب الحجم
+    invalidate: function () { if (map) map.invalidateSize(); }
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();

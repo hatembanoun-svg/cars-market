@@ -1,7 +1,6 @@
 // sw.js – Cars Market DZ Service Worker
-const CACHE_NAME = 'cars-market-v1';
-
-// الملفات التي يتم تخزينها للعمل بدون انترنت
+// غيّر رقم النسخة عند أي تحديث كبير حتى يُحذف الكاش القديم.
+const CACHE_NAME = 'cars-market-v3';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -14,78 +13,59 @@ const STATIC_ASSETS = [
   './fx.js',
   './manifest.json',
   './assets/logo.png',
-  './assets/icon-192.png',
-  'https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap'
+  './assets/icon-192.png'
 ];
 
-// ── Install: تخزين الملفات ──
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS)));
   self.skipWaiting();
 });
 
-// ── Activate: حذف الكاش القديم ──
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
-      )
-    )
+    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// ── Fetch ──
-// قاعدة عامة:
-// - Firebase / Google APIs: تذهب للشبكة مباشرة دائماً (بيانات حية، لا تُخزَّن).
-// - باقي الملفات الثابتة (HTML/CSS/JS/الخطوط/الصور): Cache-first مع تحديث في الخلفية (stale-while-revalidate)
-//   هذا يجعل فتح التطبيق فورياً حتى بدون انترنت، مع تحديث الكاش كل مرة تتوفر فيها الشبكة.
+const NETWORK_ONLY = ['firestore.googleapis.com', 'firebase', 'identitytoolkit', 'securetoken', 'gstatic.com/firebasejs', 'tile.openstreetmap.org', 'wa.me'];
+
 self.addEventListener('fetch', event => {
-  const url = event.request.url;
+  const req = event.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  if (NETWORK_ONLY.some(p => req.url.includes(p))) return; // بيانات حية وبلاط الخريطة: لا كاش
 
-  // اطلب من المتصفح تجاهل أي شيء ليس GET (مثل POST لـ Firestore)
-  if (event.request.method !== 'GET') return;
+  const sameOrigin = url.origin === self.location.origin;
+  const isCode = sameOrigin && (req.mode === 'navigate' || ['document', 'script', 'style', 'manifest'].includes(req.destination));
 
-  // Firebase و Google APIs تعمل دائماً من الشبكة مباشرة، بدون أي تدخل من الكاش
-  if (
-    url.includes('firestore.googleapis.com') ||
-    url.includes('firebase') ||
-    url.includes('googleapis.com/identitytoolkit') ||
-    url.includes('securetoken') ||
-    url.includes('gstatic.com/firebasejs')
-  ) {
-    return; // اترك المتصفح يتعامل مع الطلب مباشرة
+  if (isCode) {
+    // الشبكة أولاً: يرى المستخدم آخر نسخة دائماً، والكاش للعمل دون اتصال فقط
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE_NAME);
+      try {
+        const res = await fetch(req);
+        if (res && res.status === 200) event.waitUntil(cache.put(req, res.clone()));
+        return res;
+      } catch (err) {
+        const cached = await cache.match(req, { ignoreSearch: true });
+        if (cached) return cached;
+        if (req.mode === 'navigate') return (await cache.match('./index.html')) || Response.error();
+        return Response.error();
+      }
+    })());
+    return;
   }
 
-  event.respondWith(
-    caches.open(CACHE_NAME).then(async cache => {
-      const cached = await cache.match(event.request);
-
-      // ابدأ طلب شبكة بالتوازي لتحديث الكاش (لا ننتظره إن وُجد كاش)
-      const networkFetch = fetch(event.request)
-        .then(response => {
-          if (response && response.status === 200) {
-            cache.put(event.request, response.clone());
-          }
-          return response;
-        })
-        .catch(() => null);
-
-      // إن وُجدت نسخة في الكاش، أعطها فوراً (سرعة قصوى)
-      if (cached) {
-        networkFetch; // حدّث الكاش بالخلفية بدون انتظار
-        return cached;
-      }
-
-      // إن لم توجد نسخة في الكاش، انتظر الشبكة
-      const networkResponse = await networkFetch;
-      if (networkResponse) return networkResponse;
-
-      // فشلت الشبكة ولا يوجد كاش: ارجع للصفحة الرئيسية كحل أخير
-      return cache.match('./index.html');
-    })
-  );
+  // صور وخطوط وملفات Leaflet: الكاش أولاً مع تحديث في الخلفية
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(req);
+    const refresh = fetch(req).then(res => {
+      if (res && res.status === 200) cache.put(req, res.clone());
+      return res;
+    }).catch(() => null);
+    if (cached) { event.waitUntil(refresh); return cached; }
+    return (await refresh) || Response.error();
+  })());
 });

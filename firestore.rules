@@ -1,8 +1,11 @@
 rules_version = '2';
-// Cars Market DZ — قواعد Firestore
-// • القراءة للجميع. النشر مفتوح لكن مقيَّد الحقول والأنواع والأحجام.
+// Cars Market DZ — قواعد Firestore (سيارات + قطع غيار في نفس المجموعة clients)
+// • القراءة للجميع. النشر مفتوح لكن مقيَّد الحقول والأنواع والأحجام، ويختلف حسب نوع الإعلان kind:
+//     - بلا kind، أو kind == 'car'  → إعلان سيارة (الإعلانات القديمة وعملاء التطبيق القدامى يعملون كما كانوا).
+//     - kind == 'part'              → إعلان قطعة غيار.
 // • الإعلان المميز (feat / featUntil) لا يستطيع أي زائر كتابته: تفعّله أنت يدوياً من لوحة Firebase.
-// • التعديل الوحيد المسموح للزوار: زيادة عدّاد المشاهدات بمقدار 1.
+//   (الحقلان غير موجودين في أي قائمة hasOnly، فأي إنشاء يحتويهما يُرفض.)
+// • التعديل الوحيد المسموح للزوار: زيادة عدّاد المشاهدات بمقدار 1. ولا حذف.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -15,29 +18,61 @@ service cloud.firestore {
         && (l.size() < 4 || imgOk(l[3]));
     }
 
-    function validAd(d) {
-      return d.keys().hasOnly(['brand','model','year','km','fuel','gearbox','seller','wilaya','price',
-                               'title','desc','phone','date','createdAt','views','imgs','imgBase64'])
-        && d.keys().hasAll(['brand','model','year','km','fuel','gearbox','seller','wilaya','price','title','phone','createdAt','views'])
-        && d.brand is string && d.brand.size() >= 2 && d.brand.size() <= 30
-        && d.model is string && d.model.size() <= 40
-        && d.year is int && d.year >= 1960 && d.year <= 2035
-        && d.km is int && d.km >= 0 && d.km <= 2000000
-        && d.fuel in ['essence','diesel','gpl','hybrid','electric']
-        && d.gearbox in ['manual','auto']
-        && d.seller in ['individual','dealer']
+    // ── الحقول المشتركة بين النوعين ──
+    // maxPrice يُمرَّر لأن القطع أرخص بكثير من السيارات.
+    function commonOk(d, maxPrice) {
+      return d.seller in ['individual','dealer']
         && d.wilaya is int && d.wilaya >= 1 && d.wilaya <= 58
-        && d.price is int && d.price > 0 && d.price <= 1000000000
-        && d.title is string && d.title.size() <= 100
+        && d.price is int && d.price > 0 && d.price <= maxPrice
+        && d.title is string && d.title.size() >= 1 && d.title.size() <= 100
         && (!('desc' in d) || (d.desc is string && d.desc.size() <= 1500))
         && d.phone is string && d.phone.size() >= 9 && d.phone.size() <= 20
         && (!('date' in d) || (d.date is string && d.date.size() <= 12))
         && d.createdAt is int
         && d.createdAt <= request.time.toMillis() + 600000
         && d.createdAt >= request.time.toMillis() - 86400000
-        && d.views == 0
+        && d.views is int && d.views == 0
         && (!('imgBase64' in d) || imgOk(d.imgBase64))
         && (!('imgs' in d) || imgsOk(d.imgs));
+    }
+
+    // ── سيارة (kind اختياري، لكن إن وُجد فيجب أن يساوي 'car') ──
+    function validCar(d) {
+      return d.keys().hasOnly(['kind','brand','model','year','km','fuel','gearbox','seller','wilaya','price',
+                               'title','desc','phone','date','createdAt','views','imgs','imgBase64'])
+        && d.keys().hasAll(['brand','model','year','km','fuel','gearbox','seller','wilaya','price','title','phone','createdAt','views'])
+        && (!('kind' in d) || d.kind == 'car')
+        && d.brand is string && d.brand.size() >= 2 && d.brand.size() <= 30
+        && d.model is string && d.model.size() <= 40
+        && d.year is int && d.year >= 1960 && d.year <= 2035
+        && d.km is int && d.km >= 0 && d.km <= 2000000
+        && d.fuel in ['essence','diesel','gpl','hybrid','electric']
+        && d.gearbox in ['manual','auto']
+        && commonOk(d, 1000000000);
+    }
+
+    // ── قطعة غيار (kind إلزامي ويساوي 'part') ──
+    // الاختياري: compatBrand, compatModel, compatYearFrom, compatYearTo, partNumber, desc, date, imgs
+    function validPart(d) {
+      return d.keys().hasOnly(['kind','partName','partCategory','condition','compatBrand','compatModel',
+                               'compatYearFrom','compatYearTo','partNumber','seller','wilaya','price',
+                               'title','desc','phone','date','createdAt','views','imgs'])
+        && d.keys().hasAll(['kind','partName','partCategory','condition','seller','wilaya','price','title','phone','createdAt','views'])
+        && d.kind == 'part'
+        && d.partName is string && d.partName.size() >= 2 && d.partName.size() <= 80
+        && d.partCategory in ['engine','brakes','suspension','electrical','body','tires','oil','lighting','ac','interior','accessories','other']
+        && d.condition in ['new','used','refurbished']
+        && (!('compatBrand' in d) || (d.compatBrand is string && d.compatBrand.size() >= 2 && d.compatBrand.size() <= 30))
+        && (!('compatModel' in d) || (d.compatModel is string && d.compatModel.size() >= 1 && d.compatModel.size() <= 40 && 'compatBrand' in d))
+        && (!('compatYearFrom' in d) || (d.compatYearFrom is int && d.compatYearFrom >= 1960 && d.compatYearFrom <= 2035))
+        && (!('compatYearTo' in d) || (d.compatYearTo is int && d.compatYearTo >= 1960 && d.compatYearTo <= 2035))
+        && (!('compatYearFrom' in d && 'compatYearTo' in d) || d.compatYearFrom <= d.compatYearTo)
+        && (!('partNumber' in d) || (d.partNumber is string && d.partNumber.size() >= 1 && d.partNumber.size() <= 40))
+        && commonOk(d, 100000000);
+    }
+
+    function validAd(d) {
+      return ('kind' in d && d.kind == 'part') ? validPart(d) : validCar(d);
     }
 
     match /clients/{adId} {

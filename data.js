@@ -89,4 +89,58 @@
     individual: { ar: 'فرد',   fr: 'Particulier' },
     dealer:     { ar: 'معرض',  fr: 'Professionnel' }
   };
+  // ── نوع الإعلان (الإعلانات القديمة بلا kind تُعامَل كسيارات) ──
+  window.CM_KIND = {
+    car:  { ar: 'سيارة',     fr: 'Voiture' },
+    part: { ar: 'قطعة غيار', fr: 'Pièce auto' }
+  };
+  // ── قطع الغيار: الفئات (المفاتيح مطابقة تماماً لقواعد firestore.rules) ──
+  window.CM_PART_CAT = {
+    engine:      { ar: 'محرك',            fr: 'Moteur' },
+    brakes:      { ar: 'فرامل',           fr: 'Freinage' },
+    suspension:  { ar: 'تعليق',           fr: 'Suspension' },
+    electrical:  { ar: 'كهرباء',          fr: 'Électricité' },
+    body:        { ar: 'هيكل وزجاج',      fr: 'Carrosserie et vitrage' },
+    tires:       { ar: 'إطارات وجنوط',    fr: 'Pneus et jantes' },
+    oil:         { ar: 'زيوت وفلاتر',     fr: 'Huiles et filtres' },
+    lighting:    { ar: 'إضاءة',           fr: 'Éclairage' },
+    ac:          { ar: 'تكييف',           fr: 'Climatisation' },
+    interior:    { ar: 'داخلية',          fr: 'Intérieur' },
+    accessories: { ar: 'إكسسوارات',       fr: 'Accessoires' },
+    other:       { ar: 'أخرى',            fr: 'Autre' }
+  };
+  // ── حالة القطعة ──
+  window.CM_COND = {
+    new:         { ar: 'جديدة',  fr: 'Neuve' },
+    used:        { ar: 'مستعملة', fr: 'Occasion' },
+    refurbished: { ar: 'مجدَّدة', fr: 'Reconditionnée' }
+  };
+  // ── مرادفات بحث القطع: الكلمة (عربية/دارجة) ← بدائل لاتينية وعربية ──
+  window.CM_PART_SYN = {
+    'فرامل': ['plaquette', 'plaquettes', 'frein', 'freins', 'disque', 'disques', 'brake', 'تيل'],
+    'فرملة': ['plaquette', 'frein', 'freins', 'disque', 'فرامل'],
+    'تيل': ['plaquette', 'plaquettes', 'frein', 'فرامل'],
+    'فلتر': ['filtre', 'filtres', 'filter'], 'فلاتر': ['filtre', 'filtres', 'filter'], 'مصفاة': ['filtre', 'فلتر'],
+    'زيت': ['huile', 'huiles', 'oil', 'vidange'], 'زيوت': ['huile', 'huiles', 'oil'], 'فيدانج': ['vidange', 'huile', 'زيت'],
+    'بوجيات': ['bougie', 'bougies', 'بوجي'], 'بوجي': ['bougie', 'bougies', 'بوجيات'], 'شمعات': ['bougie', 'bougies', 'بوجي'],
+    'بطارية': ['batterie', 'battery'], 'بطاريه': ['batterie', 'battery'],
+    'مساعد': ['amortisseur', 'amortisseurs', 'مساعدات'], 'مساعدات': ['amortisseur', 'amortisseurs', 'مساعد'],
+    'كلتش': ['embrayage', 'clutch', 'دبرياج'], 'دبرياج': ['embrayage', 'clutch', 'كلتش'], 'ديبرياج': ['embrayage', 'clutch', 'كلتش'],
+    'رادياتور': ['radiateur'], 'مبرد': ['radiateur', 'رادياتور'],
+    'فانوس': ['phare', 'phares', 'feu', 'feux', 'optique', 'مصباح'], 'مصباح': ['phare', 'phares', 'feu', 'feux', 'optique', 'فانوس'],
+    'ضوء': ['phare', 'feu', 'feux', 'optique', 'اضاءه'], 'اضاءة': ['phare', 'feu', 'feux', 'optique'],
+    'جنط': ['jante', 'jantes', 'جنوط'], 'جنوط': ['jante', 'jantes', 'جنط'],
+    'عجلة': ['roue', 'roues', 'pneu', 'pneus', 'اطار'], 'اطار': ['pneu', 'pneus', 'roue', 'عجله'], 'اطارات': ['pneu', 'pneus', 'roue'],
+    'زجاج': ['vitre', 'vitres', 'pare brise', 'parebrise', 'glace'], 'بريز': ['pare brise', 'parebrise', 'زجاج'],
+    'مضخة': ['pompe', 'pompes'], 'بومبة': ['pompe', 'pompes', 'مضخه'],
+    'حزام': ['courroie', 'courroies', 'kit distribution'], 'كورواي': ['courroie', 'حزام'],
+    'رولمان': ['roulement', 'roulements'], 'رولمو': ['roulement', 'roulements', 'رولمان'],
+    'دينامو': ['alternateur', 'مولد'], 'مولد': ['alternateur', 'دينامو'],
+    'ستارتر': ['demarreur', 'starter'], 'مارش': ['demarreur', 'starter', 'ستارتر'],
+    'مرآة': ['retroviseur', 'retro'], 'مراية': ['retroviseur', 'retro', 'مرآه'], 'رتروفيزور': ['retroviseur', 'مرايه'],
+    'بارشوك': ['pare choc', 'parechoc', 'pare-choc', 'صدام'], 'صدام': ['pare choc', 'parechoc', 'بارشوك'],
+    'تكييف': ['climatisation', 'clim', 'compresseur'], 'كليم': ['climatisation', 'clim', 'تكييف'],
+    'محرك': ['moteur', 'engine', 'موتور'], 'موتور': ['moteur', 'engine', 'محرك'],
+    'جوان': ['joint', 'joints', 'culasse'], 'سيبور': ['capteur', 'capteurs'], 'حساس': ['capteur', 'capteurs']
+  };
 })();

@@ -1,7 +1,7 @@
 {
   "name": "Cars Market DZ — سوق السيارات في الجزائر",
   "short_name": "Cars Market",
-  "description": "سوق السيارات في الجزائر: إعلانات مجانية وخريطة تفاعلية لبيع وشراء السيارات.",
+  "description": "سوق السيارات وقطع الغيار في الجزائر: إعلانات مجانية وخريطة تفاعلية لبيع وشراء السيارات وقطع الغيار.",
   "start_url": "./index.html",
   "scope": "./",
   "id": "/index.html",
@@ -25,7 +25,7 @@
       "purpose": "any"
     },
     {
-      "src": "assets/icon-512.png",
+      "src": "assets/icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -35,5 +35,16 @@
     "shopping",
     "business"
   ],
-  "screenshots": []
+  "shortcuts": [
+    {
+      "name": "قطع غيار",
+      "short_name": "قطع غيار",
+      "url": "./index.html?kind=part"
+    },
+    {
+      "name": "سيارات",
+      "short_name": "سيارات",
+      "url": "./index.html"
+    }
+  ]
 }
